@@ -1,0 +1,24 @@
+[package]
+name = "pmcli"
+version = "0.1.0"
+edition = "2021"
+
+# Usage:
+#   cargo run --manifest-path scripts/pmcli/Cargo.toml -- <command> [args]
+#
+# Examples:
+#   cargo run --manifest-path scripts/pmcli/Cargo.toml -- list
+#   cargo run --manifest-path scripts/pmcli/Cargo.toml -- show github
+#   cargo run --manifest-path scripts/pmcli/Cargo.toml -- copy github
+#   cargo run --manifest-path scripts/pmcli/Cargo.toml -- add
+#   cargo run --manifest-path scripts/pmcli/Cargo.toml -- export --out ~/Desktop/vault.pmvault
+#   cargo run --manifest-path scripts/pmcli/Cargo.toml -- import ~/Desktop/vault.pmvault
+
+[dependencies]
+aes-gcm = "0.10"
+argon2 = "0.5"
+base64 = "0.22"
+clap = { version = "4", features = ["derive"] }
+password-hash = { version = "0.5", features = ["getrandom"] }
+rpassword = "7"
+rusqlite = { version = "0.31", features = ["bundled"] }
