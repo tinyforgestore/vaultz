@@ -16,6 +16,13 @@ export function useLoginPage() {
   const [importFilePath, setImportFilePath] = useState<string | null>(null);
   const [showMasterPassword, setShowMasterPassword] = useState(false);
   const [shaking, setShaking] = useState(false);
+  const [importSuccess, setImportSuccess] = useState(false);
+
+  useEffect(() => {
+    if (!importSuccess) return;
+    const timer = setTimeout(() => setImportSuccess(false), 3000);
+    return () => clearTimeout(timer);
+  }, [importSuccess]);
 
   useEffect(() => {
     if (!login.error) return;
@@ -56,6 +63,7 @@ export function useLoginPage() {
     return invoke('import_vault', { passphrase, path: importFilePath })
       .then(() => {
         setImportFilePath(null);
+        setImportSuccess(true);
         setIsDatabaseExist(true);
       })
       .catch(err => { console.error('Failed to import vault:', err); });
@@ -77,5 +85,6 @@ export function useLoginPage() {
     handleCreateMasterPassword,
     handleImportVault,
     confirmImportVault,
+    importSuccess,
   };
 }

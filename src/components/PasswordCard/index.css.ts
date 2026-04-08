@@ -53,7 +53,13 @@ export const passwordSubtitle = style({
 });
 
 export const passwordFolderTag = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '4px',
+  padding: '2px 8px',
+  borderRadius: '999px',
   fontSize: '11px',
+  backgroundColor: 'var(--gray-3)',
   color: 'var(--gray-10)',
 });
 

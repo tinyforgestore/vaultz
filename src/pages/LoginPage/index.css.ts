@@ -222,3 +222,12 @@ export const importButton = style({
     backgroundColor: 'var(--gray-3)',
   },
 });
+
+export const toastContainer = style({
+  position: 'absolute',
+  bottom: '20px',
+  left: '50%',
+  transform: 'translateX(-50%)',
+  zIndex: 1000,
+  whiteSpace: 'nowrap',
+});

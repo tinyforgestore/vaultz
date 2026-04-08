@@ -3,6 +3,7 @@ import vaultLogo from '@/assets/vault-logo.png';
 import { Flex, Dialog, Text } from '@radix-ui/themes';
 import { CreateMasterPasswordModal } from '@/components/modals/CreateMasterPasswordModal';
 import ImportVaultModal from '@/components/modals/ImportVaultModal';
+import { Toast } from '@/components/Toast';
 import { useLoginPage } from '@/hooks/useLoginPage';
 import * as styles from './index.css';
 
@@ -27,6 +28,7 @@ export default function LoginPage() {
     handleCreateMasterPassword,
     handleImportVault,
     confirmImportVault,
+    importSuccess,
   } = useLoginPage();
 
   if (isCheckingDatabase) {
@@ -154,6 +156,12 @@ export default function LoginPage() {
           onConfirm={confirmImportVault}
           onCancel={() => setImportFilePath(null)}
         />
+      )}
+
+      {importSuccess && (
+        <div className={styles.toastContainer}>
+          <Toast message="Vault imported successfully" variant="success" />
+        </div>
       )}
     </div>
   );

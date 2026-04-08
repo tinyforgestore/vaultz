@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Dialog, Flex, TextField, Button, Text } from '@radix-ui/themes';
+import { Eye, EyeOff } from 'lucide-react';
+import { Dialog, Flex, TextField, Button, Text, IconButton } from '@radix-ui/themes';
 
 interface ExportVaultModalProps {
   onConfirm: (passphrase: string) => Promise<void>;
@@ -11,6 +12,7 @@ export default function ExportVaultModal({ onConfirm, onCancel }: ExportVaultMod
   const [confirmPassphrase, setConfirmPassphrase] = useState('');
   const [error, setError] = useState('');
   const [isExporting, setIsExporting] = useState(false);
+  const [showPassphrase, setShowPassphrase] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,11 +54,17 @@ export default function ExportVaultModal({ onConfirm, onCancel }: ExportVaultMod
                 <span style={{ fontSize: '13px' }}>Export Passphrase *</span>
                 <TextField.Root
                   size="1"
-                  type="password"
+                  type={showPassphrase ? 'text' : 'password'}
                   value={passphrase}
                   onChange={handleChange(setPassphrase)}
                   required
-                />
+                >
+                  <TextField.Slot side="right">
+                    <IconButton size="1" variant="ghost" type="button" tabIndex={-1} onClick={() => setShowPassphrase(s => !s)}>
+                      {showPassphrase ? <EyeOff size={12} /> : <Eye size={12} />}
+                    </IconButton>
+                  </TextField.Slot>
+                </TextField.Root>
               </Flex>
             </label>
 
@@ -65,11 +73,17 @@ export default function ExportVaultModal({ onConfirm, onCancel }: ExportVaultMod
                 <span style={{ fontSize: '13px' }}>Confirm Passphrase *</span>
                 <TextField.Root
                   size="1"
-                  type="password"
+                  type={showPassphrase ? 'text' : 'password'}
                   value={confirmPassphrase}
                   onChange={handleChange(setConfirmPassphrase)}
                   required
-                />
+                >
+                  <TextField.Slot side="right">
+                    <IconButton size="1" variant="ghost" type="button" tabIndex={-1} onClick={() => setShowPassphrase(s => !s)}>
+                      {showPassphrase ? <EyeOff size={12} /> : <Eye size={12} />}
+                    </IconButton>
+                  </TextField.Slot>
+                </TextField.Root>
               </Flex>
             </label>
 

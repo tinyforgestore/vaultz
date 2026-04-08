@@ -3,6 +3,7 @@ import { Check, Copy, Star } from 'lucide-react';
 import { Card, Flex, Box, Heading, IconButton } from '@radix-ui/themes';
 import { Password } from '@/types';
 import { getAvatarColor, getInitials } from '@/utils/avatar';
+import { FOLDER_ICON_MAP } from '@/constants/folders';
 import * as styles from './index.css';
 
 interface PasswordCardProps {
@@ -12,6 +13,7 @@ interface PasswordCardProps {
   copiedId: string | null;
   showFolderTag: boolean;
   folderName: string | undefined;
+  folderIcon: string | undefined;
   onCardClick: () => void;
   onCopyPassword: () => void;
   onToggleFavorite: () => void;
@@ -25,11 +27,14 @@ export const PasswordCard = memo(function PasswordCard({
   copiedId,
   showFolderTag,
   folderName,
+  folderIcon,
   onCardClick,
   onCopyPassword,
   onToggleFavorite,
   onToggleSelection,
 }: PasswordCardProps) {
+  const FolderIconComp = FOLDER_ICON_MAP[folderIcon || 'folder'] || FOLDER_ICON_MAP['folder'];
+
   return (
     <Card
       size="1"
@@ -63,7 +68,10 @@ export const PasswordCard = memo(function PasswordCard({
             {password.email || password.username}
           </div>
           {showFolderTag && folderName && (
-            <div className={styles.passwordFolderTag}>{folderName}</div>
+            <div className={styles.passwordFolderTag}>
+              <FolderIconComp size={10} />
+              {folderName}
+            </div>
           )}
         </Box>
         {!isSelectionMode && (

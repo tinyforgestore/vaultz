@@ -1,5 +1,6 @@
-import { Dialog, Flex, TextField, Button, TextArea, Select, Box } from '@radix-ui/themes';
-import { KeyRound } from 'lucide-react';
+import { useState } from 'react';
+import { Dialog, Flex, TextField, Button, TextArea, Select, Box, IconButton } from '@radix-ui/themes';
+import { KeyRound, Eye, EyeOff } from 'lucide-react';
 import { useAtomValue } from 'jotai';
 import { foldersAtom } from '@/store/atoms';
 import PasswordGenerator from '@/components/PasswordGenerator';
@@ -34,6 +35,7 @@ export default function CreatePasswordModal({ onConfirm, onCancel, initialPasswo
   } = useCreatePassword({ onConfirm, onCancel, initialPassword, initialData });
 
   const folders = useAtomValue(foldersAtom);
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <Dialog.Root open={true} onOpenChange={(open) => !open && onCancel()}>
@@ -72,12 +74,18 @@ export default function CreatePasswordModal({ onConfirm, onCancel, initialPasswo
                 <Flex gap="2">
                   <TextField.Root
                     size="1"
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     style={{ flex: 1 }}
-                  />
+                  >
+                    <TextField.Slot side="right">
+                      <IconButton size="1" variant="ghost" type="button" tabIndex={-1} onClick={() => setShowPassword(s => !s)}>
+                        {showPassword ? <EyeOff size={12} /> : <Eye size={12} />}
+                      </IconButton>
+                    </TextField.Slot>
+                  </TextField.Root>
                   <Button size="1" type="button" variant="soft" color="violet" onClick={() => setShowGenerator(!showGenerator)}>
                     <KeyRound size={14} />
                     {showGenerator ? 'Hide' : 'Generate'}

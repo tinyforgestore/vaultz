@@ -57,6 +57,7 @@ export const avatarStrip = style({
   borderRadius: '12px',
   backgroundColor: 'white',
   border: '1px solid var(--gray-4)',
+  marginBottom: '8px',
 });
 
 export const avatarLarge = style({
@@ -85,8 +86,8 @@ export const folderBadge = style({
   padding: '2px 8px',
   borderRadius: '999px',
   fontSize: '11px',
-  backgroundColor: 'var(--accent-3)',
-  color: 'var(--accent-11)',
+  backgroundColor: 'var(--gray-3)',
+  color: 'var(--gray-10)',
   marginTop: '3px',
 });
 
@@ -95,6 +96,7 @@ export const fieldCard = style({
   border: '1px solid var(--gray-4)',
   borderRadius: '12px',
   padding: '12px 14px',
+  marginBottom: '8px',
 });
 
 export const fieldLabelRow = style({

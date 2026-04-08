@@ -42,10 +42,14 @@ export function useDashboard() {
     return map;
   }, [allPasswords]);
 
-  const folderNameMap = useMemo(() => {
-    const map: Record<string, string> = {};
-    for (const f of realFolders) map[f.id] = f.name;
-    return map;
+  const { folderNameMap, folderIconMap } = useMemo(() => {
+    const names: Record<string, string> = {};
+    const icons: Record<string, string> = {};
+    for (const f of realFolders) {
+      names[f.id] = f.name;
+      icons[f.id] = f.icon;
+    }
+    return { folderNameMap: names, folderIconMap: icons };
   }, [realFolders]);
 
   const [selectedFolder, setSelectedFolder] = useAtom(selectedFolderAtom);
@@ -103,6 +107,7 @@ export function useDashboard() {
     folders,
     passwords,
     folderNameMap,
+    folderIconMap,
     folderCountMap,
     selectedFolder,
     searchQuery,

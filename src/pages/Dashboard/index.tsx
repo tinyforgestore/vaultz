@@ -13,6 +13,7 @@ export default function Dashboard() {
     folders,
     passwords,
     folderNameMap,
+    folderIconMap,
     folderCountMap,
     selectedFolder,
     searchQuery,
@@ -121,6 +122,7 @@ export default function Dashboard() {
                   copiedId={copiedId}
                   showFolderTag={showFolderTag}
                   folderName={folderNameMap[password.folderId]}
+                  folderIcon={folderIconMap[password.folderId]}
                   onCardClick={() => handlePasswordClick(password.id)}
                   onCopyPassword={() => handleCopyPassword(password.id, password.password)}
                   onToggleFavorite={() => toggleFavorite(password.id)}

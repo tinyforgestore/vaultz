@@ -1,7 +1,8 @@
-import { Copy, Eye, EyeOff, ArrowLeft, Check, Star, Globe, User, Lock, FileText, FolderOpen } from 'lucide-react';
+import { Copy, Eye, EyeOff, ArrowLeft, Check, Star, Globe, User, Lock, FileText } from 'lucide-react';
 import { Flex, Button, Heading, IconButton, Box, Text } from '@radix-ui/themes';
 import CreatePasswordModal from '@/components/modals/CreatePasswordModal';
 import { usePasswordDetails } from '@/hooks/usePasswordDetails';
+import { FOLDER_ICON_MAP } from '@/constants/folders';
 import { getAvatarColor, getInitials } from '@/utils/avatar';
 import { Toast } from '@/components/Toast';
 import * as styles from './index.css';
@@ -16,6 +17,7 @@ export default function PasswordDetailsPage() {
     toastVariant,
     copiedField,
     folderName,
+    folderIcon,
     setShowPassword,
     setIsDeleteModalOpen,
     setIsEditModalOpen,
@@ -37,6 +39,7 @@ export default function PasswordDetailsPage() {
   }
 
   const userField = password.username || password.email || '';
+  const FolderIconComp = FOLDER_ICON_MAP[folderIcon] || FOLDER_ICON_MAP['folder'];
 
   return (
     <Box className={styles.container}>
@@ -61,7 +64,7 @@ export default function PasswordDetailsPage() {
             <Box className={styles.entryName}>{password.name}</Box>
             {folderName && (
               <div className={styles.folderBadge}>
-                <FolderOpen size={10} />
+                <FolderIconComp size={10} />
                 {folderName}
               </div>
             )}

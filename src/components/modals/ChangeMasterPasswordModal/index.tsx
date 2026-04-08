@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Dialog, Flex, TextField, Button } from '@radix-ui/themes';
+import { Eye, EyeOff } from 'lucide-react';
+import { Dialog, Flex, TextField, Button, IconButton } from '@radix-ui/themes';
 
 interface ChangeMasterPasswordModalProps {
   onConfirm: (currentPassword: string, newPassword: string) => void;
@@ -10,10 +11,10 @@ export default function ChangeMasterPasswordModal({ onConfirm, onCancel }: Chang
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPasswords, setShowPasswords] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Add validation
     onConfirm(currentPassword, newPassword);
   };
 
@@ -29,11 +30,17 @@ export default function ChangeMasterPasswordModal({ onConfirm, onCancel }: Chang
                 <span style={{ fontSize: '13px' }}>Current Password *</span>
                 <TextField.Root
                   size="1"
-                  type="password"
+                  type={showPasswords ? 'text' : 'password'}
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   required
-                />
+                >
+                  <TextField.Slot side="right">
+                    <IconButton size="1" variant="ghost" type="button" tabIndex={-1} onClick={() => setShowPasswords(s => !s)}>
+                      {showPasswords ? <EyeOff size={12} /> : <Eye size={12} />}
+                    </IconButton>
+                  </TextField.Slot>
+                </TextField.Root>
               </Flex>
             </label>
 
@@ -42,11 +49,17 @@ export default function ChangeMasterPasswordModal({ onConfirm, onCancel }: Chang
                 <span style={{ fontSize: '13px' }}>New Password *</span>
                 <TextField.Root
                   size="1"
-                  type="password"
+                  type={showPasswords ? 'text' : 'password'}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
-                />
+                >
+                  <TextField.Slot side="right">
+                    <IconButton size="1" variant="ghost" type="button" tabIndex={-1} onClick={() => setShowPasswords(s => !s)}>
+                      {showPasswords ? <EyeOff size={12} /> : <Eye size={12} />}
+                    </IconButton>
+                  </TextField.Slot>
+                </TextField.Root>
               </Flex>
             </label>
 
@@ -55,11 +68,17 @@ export default function ChangeMasterPasswordModal({ onConfirm, onCancel }: Chang
                 <span style={{ fontSize: '13px' }}>Confirm New Password *</span>
                 <TextField.Root
                   size="1"
-                  type="password"
+                  type={showPasswords ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
-                />
+                >
+                  <TextField.Slot side="right">
+                    <IconButton size="1" variant="ghost" type="button" tabIndex={-1} onClick={() => setShowPasswords(s => !s)}>
+                      {showPasswords ? <EyeOff size={12} /> : <Eye size={12} />}
+                    </IconButton>
+                  </TextField.Slot>
+                </TextField.Root>
               </Flex>
             </label>
 

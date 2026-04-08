@@ -34,10 +34,12 @@ export function usePasswordDetails() {
     if (copyFieldTimerRef.current) clearTimeout(copyFieldTimerRef.current);
   }, []);
 
-  const folderName = useMemo(
-    () => folders.find(f => f.id === password?.folderId)?.name ?? '',
+  const folder = useMemo(
+    () => folders.find(f => f.id === password?.folderId),
     [folders, password?.folderId],
   );
+  const folderName = folder?.name ?? '';
+  const folderIcon = folder?.icon ?? 'folder';
 
   const showTimedToast = (message: string, variant: 'success' | 'error' = 'success') => {
     setToastMessage(message);
@@ -112,6 +114,7 @@ export function usePasswordDetails() {
     toastVariant,
     copiedField,
     folderName,
+    folderIcon,
 
     setShowPassword,
     setIsDeleteModalOpen,
