@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Password } from '@/types';
+import { useCreateFolder } from './useCreateFolder';
 
 interface UseCreatePasswordProps {
   onConfirm: (passwordData: any) => void;
@@ -17,6 +18,8 @@ export function useCreatePassword({ onConfirm, onCancel, initialPassword = '', i
   const [folder, setFolder] = useState(initialData?.folderId || '');
   const [showGenerator, setShowGenerator] = useState(false);
 
+  const { confirmCreateFolder: createFolderAction } = useCreateFolder();
+
   // Update password when initialPassword changes (from generator)
   useEffect(() => {
     if (initialPassword) {
@@ -27,6 +30,13 @@ export function useCreatePassword({ onConfirm, onCancel, initialPassword = '', i
   const handleUseGeneratedPassword = (generatedPassword: string) => {
     setPassword(generatedPassword);
     setShowGenerator(false);
+  };
+
+  const confirmCreateFolder = (folderData: { name: string; icon: string }) => {
+    return createFolderAction(folderData).then((newFolder) => {
+      setFolder(newFolder.id);
+      return newFolder;
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -62,6 +72,7 @@ export function useCreatePassword({ onConfirm, onCancel, initialPassword = '', i
 
     // Handlers
     handleUseGeneratedPassword,
+    confirmCreateFolder,
     handleSubmit,
   };
 }

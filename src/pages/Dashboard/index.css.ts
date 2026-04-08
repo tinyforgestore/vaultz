@@ -153,6 +153,25 @@ export const toastContainer = style({
   zIndex: 1000,
 });
 
+export const newFolderButton = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '5px',
+  padding: '5px 11px',
+  fontSize: '12px',
+  fontWeight: '500',
+  borderRadius: '999px',
+  border: 'none',
+  cursor: 'pointer',
+  whiteSpace: 'nowrap',
+  flexShrink: 0,
+  backgroundColor: 'var(--gray-4)',
+  color: 'var(--gray-11)',
+  ':hover': {
+    backgroundColor: 'var(--gray-5)',
+  },
+});
+
 export const bulkToolbar = style({
   position: 'absolute',
   bottom: 0,

@@ -51,7 +51,7 @@ export function usePasswordDetails() {
   const handleCopy = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      showTimedToast('Copied to clipboard!', 'success');
+      showTimedToast('Copied — clipboard clears in 45s', 'success');
     } catch (err) {
       console.error('Failed to copy:', err);
       showTimedToast('Failed to copy', 'error');

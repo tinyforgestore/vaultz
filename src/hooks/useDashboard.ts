@@ -19,12 +19,14 @@ import { CreatePasswordInput } from '@/types';
 import { sessionService } from '@/services/sessionService';
 import { useClipboard } from './useClipboard';
 import { usePasswordSelection } from './usePasswordSelection';
+import { useCreateFolder } from './useCreateFolder';
 
 const FAVORITES_ID = SPECIAL_FOLDERS.FAVORITES.toString();
 
 export function useDashboard() {
   const [isCreatePasswordOpen, setIsCreatePasswordOpen] = useState(false);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
+  const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
 
   const realFolders = useAtomValue(foldersAtom);
   const folders = useMemo(() => [...VIRTUAL_FOLDERS, ...realFolders], [realFolders]);
@@ -62,6 +64,8 @@ export function useDashboard() {
   const loadData = useSetAtom(loadInitialDataAtom);
   const navigate = useNavigate();
 
+  const { confirmCreateFolder: createFolderAction } = useCreateFolder();
+
   const clipboard = useClipboard();
   const selection = usePasswordSelection(passwords);
 
@@ -83,6 +87,12 @@ export function useDashboard() {
   const confirmCreatePassword = async (passwordData: CreatePasswordInput) => {
     await createPassword(passwordData);
     setIsCreatePasswordOpen(false);
+  };
+
+  const confirmCreateFolder = (folderData: { name: string; icon: string }) => {
+    return createFolderAction(folderData).then(() => {
+      setIsCreateFolderOpen(false);
+    });
   };
 
   const showFolderTag = isSpecialFolder(selectedFolder);
@@ -113,6 +123,7 @@ export function useDashboard() {
     searchQuery,
     isCreatePasswordOpen,
     isLogoutConfirmOpen,
+    isCreateFolderOpen,
     favoriteAlert,
     showFolderTag,
     visibleFolders,
@@ -123,6 +134,7 @@ export function useDashboard() {
     setSearchQuery,
     setIsCreatePasswordOpen,
     setIsLogoutConfirmOpen,
+    setIsCreateFolderOpen,
 
     handlePasswordClick,
     handleSettingsClick,
@@ -131,5 +143,6 @@ export function useDashboard() {
     toggleFavorite,
     handleCreatePassword,
     confirmCreatePassword,
+    confirmCreateFolder,
   };
 }

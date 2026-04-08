@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Dialog, Flex, TextField, Button, TextArea, Select, Box, IconButton } from '@radix-ui/themes';
-import { KeyRound, Eye, EyeOff } from 'lucide-react';
+import { KeyRound, Eye, EyeOff, Plus } from 'lucide-react';
 import { useAtomValue } from 'jotai';
 import { foldersAtom } from '@/store/atoms';
 import PasswordGenerator from '@/components/PasswordGenerator';
+import CreateFolderModal from '@/components/modals/CreateFolderModal';
 import { useCreatePassword } from '@/hooks/useCreatePassword';
 import { Password } from '@/types';
+import * as styles from './index.css';
 
 interface CreatePasswordModalProps {
   onConfirm: (passwordData: any) => void;
@@ -31,11 +33,13 @@ export default function CreatePasswordModal({ onConfirm, onCancel, initialPasswo
     setFolder,
     setShowGenerator,
     handleUseGeneratedPassword,
+    confirmCreateFolder,
     handleSubmit,
   } = useCreatePassword({ onConfirm, onCancel, initialPassword, initialData });
 
   const folders = useAtomValue(foldersAtom);
   const [showPassword, setShowPassword] = useState(false);
+  const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
 
   return (
     <Dialog.Root open={true} onOpenChange={(open) => !open && onCancel()}>
@@ -46,7 +50,7 @@ export default function CreatePasswordModal({ onConfirm, onCancel, initialPasswo
           <Flex direction="column" gap="2">
             <label>
               <Flex direction="column" gap="1">
-                <span style={{ fontSize: '13px' }}>Service Name *</span>
+                <span className={styles.fieldLabel}>Service Name <span className={styles.requiredStar}>*</span></span>
                 <TextField.Root
                   size="1"
                   value={serviceName}
@@ -58,7 +62,7 @@ export default function CreatePasswordModal({ onConfirm, onCancel, initialPasswo
 
             <label>
               <Flex direction="column" gap="1">
-                <span style={{ fontSize: '13px' }}>Username *</span>
+                <span className={styles.fieldLabel}>Username <span className={styles.requiredStar}>*</span></span>
                 <TextField.Root
                   size="1"
                   value={username}
@@ -70,7 +74,7 @@ export default function CreatePasswordModal({ onConfirm, onCancel, initialPasswo
 
             <label>
               <Flex direction="column" gap="1">
-                <span style={{ fontSize: '13px' }}>Password *</span>
+                <span className={styles.fieldLabel}>Password <span className={styles.requiredStar}>*</span></span>
                 <Flex gap="2">
                   <TextField.Root
                     size="1"
@@ -106,7 +110,7 @@ export default function CreatePasswordModal({ onConfirm, onCancel, initialPasswo
 
             <label>
               <Flex direction="column" gap="1">
-                <span style={{ fontSize: '13px' }}>URL</span>
+                <span className={styles.fieldLabel}>URL</span>
                 <TextField.Root
                   size="1"
                   type="url"
@@ -118,21 +122,27 @@ export default function CreatePasswordModal({ onConfirm, onCancel, initialPasswo
 
             <label>
               <Flex direction="column" gap="1">
-                <span style={{ fontSize: '13px' }}>Select folder...</span>
-                <Select.Root value={folder} onValueChange={setFolder} size="1">
-                  <Select.Trigger placeholder="Select folder..." />
-                  <Select.Content>
-                    {folders.map((f) => (
-                      <Select.Item key={f.id} value={f.id}>{f.name}</Select.Item>
-                    ))}
-                  </Select.Content>
-                </Select.Root>
+                <span className={styles.fieldLabel}>Select folder...</span>
+                <Flex gap="2">
+                  <Select.Root value={folder} onValueChange={setFolder} size="1" style={{ flex: 1 }}>
+                    <Select.Trigger placeholder="Select folder..." />
+                    <Select.Content>
+                      {folders.map((f) => (
+                        <Select.Item key={f.id} value={f.id}>{f.name}</Select.Item>
+                      ))}
+                    </Select.Content>
+                  </Select.Root>
+                  <Button size="1" type="button" variant="soft" color="gray" onClick={() => setIsCreateFolderOpen(true)}>
+                    <Plus size={14} />
+                    New
+                  </Button>
+                </Flex>
               </Flex>
             </label>
 
             <label>
               <Flex direction="column" gap="1">
-                <span style={{ fontSize: '13px' }}>Notes</span>
+                <span className={styles.fieldLabel}>Notes</span>
                 <TextArea
                   size="1"
                   value={notes}
@@ -150,6 +160,17 @@ export default function CreatePasswordModal({ onConfirm, onCancel, initialPasswo
             </Flex>
           </Flex>
         </form>
+
+        {isCreateFolderOpen && (
+          <CreateFolderModal
+            onConfirm={(folderData) => {
+              confirmCreateFolder(folderData).then(() => {
+                setIsCreateFolderOpen(false);
+              });
+            }}
+            onCancel={() => setIsCreateFolderOpen(false)}
+          />
+        )}
       </Dialog.Content>
     </Dialog.Root>
   );

@@ -65,6 +65,7 @@ export const createFolderAtom = atom(
   async (get, set, input: CreateFolderInput) => {
     const newFolder = await storageService.createFolder(input);
     set(foldersAtom, [...get(foldersAtom), newFolder]);
+    return newFolder;
   }
 );
 

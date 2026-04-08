@@ -1,6 +1,7 @@
 import { Search, Settings, Plus, LogOut, CheckSquare, Trash2, Heart, HeartOff, Layers, Copy } from 'lucide-react';
 import { Flex, TextField, Box, IconButton, Dialog, Text, Button } from '@radix-ui/themes';
 import DeletePasswordModal from '@/components/modals/DeletePasswordModal';
+import CreateFolderModal from '@/components/modals/CreateFolderModal';
 import { useDashboard } from '@/hooks/useDashboard';
 import { FOLDER_ICON_MAP } from '@/constants/folders';
 import CreatePasswordModal from '@/components/modals/CreatePasswordModal';
@@ -19,6 +20,7 @@ export default function Dashboard() {
     searchQuery,
     isCreatePasswordOpen,
     isLogoutConfirmOpen,
+    isCreateFolderOpen,
     isSelectionMode,
     isBulkDeleteOpen,
     selectedIds,
@@ -31,6 +33,7 @@ export default function Dashboard() {
     setSearchQuery,
     setIsCreatePasswordOpen,
     setIsLogoutConfirmOpen,
+    setIsCreateFolderOpen,
     setIsBulkDeleteOpen,
     handlePasswordClick,
     handleSettingsClick,
@@ -40,6 +43,7 @@ export default function Dashboard() {
     handleCopyPassword,
     handleCreatePassword,
     confirmCreatePassword,
+    confirmCreateFolder,
     toggleSelectionMode,
     toggleSelection,
     selectAll,
@@ -101,6 +105,10 @@ export default function Dashboard() {
                   </button>
                 );
               })}
+              <button onClick={() => setIsCreateFolderOpen(true)} className={styles.newFolderButton}>
+                <Plus size={12} />
+                New Folder
+              </button>
             </div>
           </div>
 
@@ -166,6 +174,13 @@ export default function Dashboard() {
         <CreatePasswordModal
           onConfirm={confirmCreatePassword}
           onCancel={() => setIsCreatePasswordOpen(false)}
+        />
+      )}
+
+      {isCreateFolderOpen && (
+        <CreateFolderModal
+          onConfirm={confirmCreateFolder}
+          onCancel={() => setIsCreateFolderOpen(false)}
         />
       )}
 
