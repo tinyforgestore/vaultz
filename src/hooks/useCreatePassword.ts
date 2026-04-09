@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Password } from '@/types';
+import { normalizeUrl } from '@/utils/url';
 import { useCreateFolder } from './useCreateFolder';
 
 interface UseCreatePasswordProps {
@@ -45,7 +46,7 @@ export function useCreatePassword({ onConfirm, onCancel, initialPassword = '', i
       serviceName,
       username,
       password,
-      url,
+      url: normalizeUrl(url),
       notes,
       folder,
     });
