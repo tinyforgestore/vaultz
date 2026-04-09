@@ -15,7 +15,7 @@ import {
   isAuthenticatedAtom,
 } from '@/store/atoms';
 import { SPECIAL_FOLDERS, VIRTUAL_FOLDERS, isSpecialFolder } from '@/constants/folders';
-import { CreatePasswordInput } from '@/types';
+import { CreatePasswordInput, CreateFolderInput } from '@/types';
 import { sessionService } from '@/services/sessionService';
 import { useClipboard } from './useClipboard';
 import { usePasswordSelection } from './usePasswordSelection';
@@ -89,7 +89,7 @@ export function useDashboard() {
     setIsCreatePasswordOpen(false);
   };
 
-  const confirmCreateFolder = (folderData: { name: string; icon: string }) => {
+  const confirmCreateFolder = (folderData: CreateFolderInput) => {
     return createFolderAction(folderData).then(() => {
       setIsCreateFolderOpen(false);
     });

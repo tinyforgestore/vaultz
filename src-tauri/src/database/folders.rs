@@ -1,21 +1,23 @@
-use rusqlite::{params, Result as SqlResult};
+use rusqlite::{params, Result as SqlResult, Row};
 
 use super::{Database, FolderEntry};
+
+fn folder_from_row(row: &Row) -> SqlResult<FolderEntry> {
+    Ok(FolderEntry {
+        id: row.get::<_, i64>(0)?.to_string(),
+        name: row.get(1)?,
+        icon: row.get(2)?,
+        is_default: row.get::<_, i64>(3)? != 0,
+        created_at: row.get(4)?,
+    })
+}
 
 impl Database {
     pub fn get_all_folders(&self) -> SqlResult<Vec<FolderEntry>> {
         let mut stmt = self.conn.prepare(
             "SELECT id, name, icon, is_default, created_at FROM folders ORDER BY id",
         )?;
-        let rows = stmt.query_map([], |row| {
-            Ok(FolderEntry {
-                id: row.get::<_, i64>(0)?.to_string(),
-                name: row.get(1)?,
-                icon: row.get(2)?,
-                is_default: row.get::<_, i64>(3)? != 0,
-                created_at: row.get(4)?,
-            })
-        })?;
+        let rows = stmt.query_map([], folder_from_row)?;
         rows.collect()
     }
 
@@ -28,15 +30,19 @@ impl Database {
         self.conn.query_row(
             "SELECT id, name, icon, is_default, created_at FROM folders WHERE id = ?1",
             params![id],
-            |row| {
-                Ok(FolderEntry {
-                    id: row.get::<_, i64>(0)?.to_string(),
-                    name: row.get(1)?,
-                    icon: row.get(2)?,
-                    is_default: row.get::<_, i64>(3)? != 0,
-                    created_at: row.get(4)?,
-                })
-            },
+            folder_from_row,
+        )
+    }
+
+    pub fn update_folder(&self, id: i64, name: &str, icon: &str) -> SqlResult<FolderEntry> {
+        self.conn.execute(
+            "UPDATE folders SET name = ?1, icon = ?2 WHERE id = ?3",
+            params![name, icon, id],
+        )?;
+        self.conn.query_row(
+            "SELECT id, name, icon, is_default, created_at FROM folders WHERE id = ?1",
+            params![id],
+            folder_from_row,
         )
     }
 
@@ -99,6 +105,18 @@ mod tests {
         db.delete_folder(id).unwrap();
         let folders = db.get_all_folders().unwrap();
         assert!(folders.is_empty());
+    }
+
+    #[test]
+    fn update_folder_changes_name_and_icon() {
+        let db = in_memory_db();
+        let folder = db.create_folder("Original", "folder", false).unwrap();
+        let id: i64 = folder.id.parse().unwrap();
+        let updated = db.update_folder(id, "Updated", "star").unwrap();
+        assert_eq!(updated.id, folder.id);
+        assert_eq!(updated.name, "Updated");
+        assert_eq!(updated.icon, "star");
+        assert!(!updated.is_default);
     }
 
     #[test]

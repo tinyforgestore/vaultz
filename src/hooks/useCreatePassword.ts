@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Password } from '@/types';
+import { Password, CreateFolderInput } from '@/types';
 import { normalizeUrl } from '@/utils/url';
 import { useCreateFolder } from './useCreateFolder';
 
@@ -33,7 +33,7 @@ export function useCreatePassword({ onConfirm, onCancel, initialPassword = '', i
     setShowGenerator(false);
   };
 
-  const confirmCreateFolder = (folderData: { name: string; icon: string }) => {
+  const confirmCreateFolder = (folderData: CreateFolderInput) => {
     return createFolderAction(folderData).then((newFolder) => {
       setFolder(newFolder.id);
       return newFolder;

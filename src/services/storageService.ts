@@ -25,6 +25,11 @@ export const storageService = {
     return parseFolderDates(folder);
   },
 
+  updateFolder: async (folderId: string, input: CreateFolderInput): Promise<Folder> => {
+    const folder = await invoke<Folder>('update_folder', { folderId, input });
+    return parseFolderDates(folder);
+  },
+
   deleteFolder: async (folderId: string): Promise<void> => {
     await invoke('delete_folder', { folderId });
   },

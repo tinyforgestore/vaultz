@@ -45,6 +45,13 @@ pub struct CreateFolderInput {
     pub icon: String,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateFolderInput {
+    pub name: String,
+    pub icon: String,
+}
+
 #[derive(Debug, Deserialize, Default)]
 #[serde(rename_all = "camelCase", default)]
 pub struct UpdatePasswordInput {

@@ -1,7 +1,17 @@
 use tauri::State;
 
-use crate::database::{CreateFolderInput, FolderEntry};
+use crate::database::{CreateFolderInput, FolderEntry, UpdateFolderInput};
 use crate::state::{parse_id, with_db, DbState};
+
+const MAX_FOLDER_NAME_LEN: usize = 30;
+
+fn validate_folder_name(name: &str) -> Result<&str, String> {
+    let trimmed = name.trim();
+    if trimmed.is_empty() || trimmed.len() > MAX_FOLDER_NAME_LEN {
+        return Err("Folder name must be 1–30 characters".to_string());
+    }
+    Ok(trimmed)
+}
 
 #[tauri::command]
 pub fn get_folders(db_state: State<DbState>) -> Result<Vec<FolderEntry>, String> {
@@ -15,8 +25,23 @@ pub fn create_folder(
     input: CreateFolderInput,
     db_state: State<DbState>,
 ) -> Result<FolderEntry, String> {
+    let name = validate_folder_name(&input.name)?;
     with_db(&db_state, |db| {
-        db.create_folder(&input.name, &input.icon, false)
+        db.create_folder(name, &input.icon, false)
+            .map_err(|e| e.to_string())
+    })
+}
+
+#[tauri::command]
+pub fn update_folder(
+    folder_id: String,
+    input: UpdateFolderInput,
+    db_state: State<DbState>,
+) -> Result<FolderEntry, String> {
+    let name = validate_folder_name(&input.name)?;
+    with_db(&db_state, |db| {
+        let id = parse_id(&folder_id)?;
+        db.update_folder(id, name, &input.icon)
             .map_err(|e| e.to_string())
     })
 }

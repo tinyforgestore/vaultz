@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { allPasswordsAtom, updatePasswordAtom, deletePasswordAtom, toggleFavoriteAtom, favoriteAlertAtom, foldersAtom } from '@/store/atoms';
+import { normalizeUrl } from '@/utils/url';
 
 export function usePasswordDetails() {
   const { id: passwordId } = useParams();
@@ -76,7 +77,7 @@ export function usePasswordDetails() {
         name: passwordData.serviceName,
         username: passwordData.username,
         password: passwordData.password,
-        website: passwordData.url,
+        website: normalizeUrl(passwordData.url),
         notes: passwordData.notes,
         folderId: passwordData.folder,
       },

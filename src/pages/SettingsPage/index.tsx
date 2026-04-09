@@ -1,4 +1,4 @@
-import { Trash2, Lock, Folder, ArrowLeft, Info, Download, ShieldOff, Search } from 'lucide-react';
+import { Trash2, Pencil, Lock, Folder, ArrowLeft, Info, Download, ShieldOff, Search } from 'lucide-react';
 import { version } from '../../../package.json';
 import { Flex, Card, Button, Heading, Box, IconButton, TextField } from '@radix-ui/themes';
 import { Toast } from '@/components/Toast';
@@ -6,6 +6,7 @@ import ChangeMasterPasswordModal from '@/components/modals/ChangeMasterPasswordM
 import ExportVaultModal from '@/components/modals/ExportVaultModal';
 import DestroyVaultModal from '@/components/modals/DestroyVaultModal';
 import CreateFolderModal from '@/components/modals/CreateFolderModal';
+import EditFolderModal from '@/components/modals/EditFolderModal';
 import DeleteFolderModal from '@/components/modals/DeleteFolderModal';
 import { useSettings } from '@/hooks/useSettings';
 import { FOLDER_ICON_MAP } from '@/constants/folders';
@@ -20,6 +21,7 @@ export default function SettingsPage() {
     isCreateFolderOpen,
     isDeleteFolderOpen,
     selectedFolder,
+    editingFolder,
     folderLimitAlert,
     folderFilter,
     filteredFolders,
@@ -36,11 +38,14 @@ export default function SettingsPage() {
     handleExportVault,
     handleDestroyVault,
     handleAddFolder,
+    handleEditFolder,
+    handleCancelEdit,
     handleDeleteFolder,
     confirmChangeMasterPassword,
     confirmExportVault,
     confirmDestroyVault,
     confirmCreateFolder,
+    confirmEditFolder,
     confirmDeleteFolder,
   } = useSettings();
 
@@ -111,9 +116,14 @@ export default function SettingsPage() {
                         <Icon size={14} />
                         <Box>{folder.name}</Box>
                       </Flex>
-                      <IconButton size="1" variant="ghost" color="red" onClick={() => handleDeleteFolder(folder.id)}>
-                        <Trash2 size={14} />
-                      </IconButton>
+                      <Flex gap="1">
+                        <IconButton size="1" variant="ghost" onClick={() => handleEditFolder(folder)}>
+                          <Pencil size={14} />
+                        </IconButton>
+                        <IconButton size="1" variant="ghost" color="red" onClick={() => handleDeleteFolder(folder.id)}>
+                          <Trash2 size={14} />
+                        </IconButton>
+                      </Flex>
                     </Flex>
                   );
                 })}
@@ -178,6 +188,14 @@ export default function SettingsPage() {
         <CreateFolderModal
           onConfirm={confirmCreateFolder}
           onCancel={() => setIsCreateFolderOpen(false)}
+        />
+      )}
+
+      {editingFolder && (
+        <EditFolderModal
+          initialData={{ name: editingFolder.name, icon: editingFolder.icon }}
+          onConfirm={confirmEditFolder}
+          onCancel={handleCancelEdit}
         />
       )}
 

@@ -24,7 +24,14 @@ export const FOLDER_ICON_MAP: Record<string, LucideIcon> = {
   heart: Heart,
 };
 
+const PICKER_IDS = ['folder', 'star', 'briefcase', 'credit-card', 'dollar', 'home'] as const;
+export const FOLDER_ICON_PICKER: { id: string; Icon: LucideIcon }[] = PICKER_IDS.map(id => ({
+  id,
+  Icon: FOLDER_ICON_MAP[id],
+}));
+
 export const MAX_FOLDERS = 10;
+export const MAX_FOLDER_NAME_LENGTH = 30;
 
 // Virtual folders that exist only in the UI, not in the database
 export const VIRTUAL_FOLDERS: Folder[] = [

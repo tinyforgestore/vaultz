@@ -131,6 +131,43 @@ describe('useFolderManager', () => {
     });
   });
 
+  describe('handleEditFolder / confirmEditFolder', () => {
+    it('sets editingFolder when handleEditFolder is called', () => {
+      const folder = makeFolder('f1', 'Work');
+      const { result } = renderHookWithProviders(() => useFolderManager());
+      act(() => result.current.handleEditFolder(folder));
+      expect(result.current.editingFolder).toEqual(folder);
+    });
+
+    it('clears editingFolder when handleCancelEdit is called', () => {
+      const folder = makeFolder('f1', 'Work');
+      const { result } = renderHookWithProviders(() => useFolderManager());
+      act(() => result.current.handleEditFolder(folder));
+      act(() => result.current.handleCancelEdit());
+      expect(result.current.editingFolder).toBeNull();
+    });
+
+    it('calls invoke and clears editingFolder on success', async () => {
+      const folder = makeFolder('f1', 'Work');
+      const updated = { ...folder, name: 'Updated', createdAt: folder.createdAt.toISOString() };
+      mockInvoke.mockResolvedValueOnce(updated);
+      const { result } = renderHookWithProviders(() => useFolderManager());
+      act(() => result.current.handleEditFolder(folder));
+      await act(async () => result.current.confirmEditFolder({ name: 'Updated', icon: 'star' }));
+      expect(mockInvoke).toHaveBeenCalledWith('update_folder', {
+        folderId: 'f1',
+        input: { name: 'Updated', icon: 'star' },
+      });
+      expect(result.current.editingFolder).toBeNull();
+    });
+
+    it('does nothing when editingFolder is null', async () => {
+      const { result } = renderHookWithProviders(() => useFolderManager());
+      await act(async () => result.current.confirmEditFolder({ name: 'X', icon: 'folder' }));
+      expect(mockInvoke).not.toHaveBeenCalled();
+    });
+  });
+
   describe('deleteFolderName', () => {
     it('returns the folder name when found', async () => {
       const { store } = renderHookWithProviders(() => useFolderManager());

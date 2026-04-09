@@ -1,17 +1,20 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
-import { foldersAtom, createFolderAtom, deleteFolderAtom } from '@/store/atoms';
+import { foldersAtom, createFolderAtom, updateFolderAtom, deleteFolderAtom } from '@/store/atoms';
+import { Folder, CreateFolderInput } from '@/types';
 import { MAX_FOLDERS } from '@/constants/folders';
 
 export function useFolderManager() {
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
   const [isDeleteFolderOpen, setIsDeleteFolderOpen] = useState(false);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
+  const [editingFolder, setEditingFolder] = useState<Folder | null>(null);
   const [folderLimitAlert, setFolderLimitAlert] = useState('');
   const [folderFilter, setFolderFilter] = useState('');
 
   const folders = useAtomValue(foldersAtom);
   const createFolder = useSetAtom(createFolderAtom);
+  const updateFolder = useSetAtom(updateFolderAtom);
   const deleteFolder = useSetAtom(deleteFolderAtom);
 
   const handleAddFolder = () => {
@@ -27,13 +30,19 @@ export function useFolderManager() {
     setIsDeleteFolderOpen(true);
   };
 
-  const confirmCreateFolder = async (folderData: { name: string; icon: string }) => {
-    try {
-      await createFolder(folderData);
-      setIsCreateFolderOpen(false);
-    } catch (err) {
-      console.error('Error creating folder:', err);
-    }
+  const confirmCreateFolder = (folderData: CreateFolderInput) =>
+    createFolder(folderData)
+      .then(() => setIsCreateFolderOpen(false))
+      .catch((err) => console.error('Error creating folder:', err));
+
+  const handleEditFolder = (folder: Folder) => setEditingFolder(folder);
+  const handleCancelEdit = () => setEditingFolder(null);
+
+  const confirmEditFolder = (folderData: CreateFolderInput) => {
+    if (!editingFolder) return Promise.resolve();
+    return updateFolder({ id: editingFolder.id, ...folderData })
+      .then(() => setEditingFolder(null))
+      .catch((err) => { console.error('Error updating folder:', err); throw err; });
   };
 
   const confirmDeleteFolder = async () => {
@@ -68,6 +77,7 @@ export function useFolderManager() {
     isCreateFolderOpen,
     isDeleteFolderOpen,
     selectedFolder,
+    editingFolder,
     folderLimitAlert,
     folderFilter,
     filteredFolders,
@@ -77,8 +87,11 @@ export function useFolderManager() {
     setSelectedFolder,
     setFolderFilter,
     handleAddFolder,
+    handleEditFolder,
+    handleCancelEdit,
     handleDeleteFolder,
     confirmCreateFolder,
+    confirmEditFolder,
     confirmDeleteFolder,
   };
 }

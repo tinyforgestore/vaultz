@@ -69,6 +69,15 @@ export const createFolderAtom = atom(
   }
 );
 
+export const updateFolderAtom = atom(
+  null,
+  async (get, set, { id, name, icon }: { id: string } & CreateFolderInput) => {
+    const updated = await storageService.updateFolder(id, { name, icon });
+    set(foldersAtom, get(foldersAtom).map(f => f.id === id ? updated : f));
+    return updated;
+  }
+);
+
 export const deleteFolderAtom = atom(
   null,
   async (get, set, folderId: string) => {

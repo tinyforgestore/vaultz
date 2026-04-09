@@ -43,6 +43,7 @@ pub fn run() {
             commands::session::change_master_password,
             commands::folders::get_folders,
             commands::folders::create_folder,
+            commands::folders::update_folder,
             commands::folders::delete_folder,
             commands::passwords::get_passwords,
             commands::passwords::get_password_by_id,
