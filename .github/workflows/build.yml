@@ -26,7 +26,7 @@ jobs:
           gh release create "${{ inputs.tag }}" \
             --repo "${{ github.repository }}" \
             --title "Vaultz ${{ inputs.tag }}" \
-            --notes "See the release notes for ${{ inputs.tag }}."
+            --generate-notes
           ID=$(gh api "repos/${{ github.repository }}/releases/tags/${{ inputs.tag }}" --jq .id)
           echo "release_id=$ID" >> $GITHUB_OUTPUT
 
