@@ -11,7 +11,6 @@ import * as styles from './index.css';
 
 export default function Dashboard() {
   const {
-    folders,
     passwords,
     folderNameMap,
     folderIconMap,

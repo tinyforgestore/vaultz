@@ -6,11 +6,11 @@ import { foldersAtom } from '@/store/atoms';
 import PasswordGenerator from '@/components/PasswordGenerator';
 import CreateFolderModal from '@/components/modals/CreateFolderModal';
 import { useCreatePassword } from '@/hooks/useCreatePassword';
-import { Password } from '@/types';
+import { Password, PasswordFormData } from '@/types';
 import * as styles from './index.css';
 
 interface CreatePasswordModalProps {
-  onConfirm: (passwordData: any) => void;
+  onConfirm: (passwordData: PasswordFormData) => void;
   onCancel: () => void;
   initialPassword?: string;
   initialData?: Password;
@@ -35,7 +35,7 @@ export default function CreatePasswordModal({ onConfirm, onCancel, initialPasswo
     handleUseGeneratedPassword,
     confirmCreateFolder,
     handleSubmit,
-  } = useCreatePassword({ onConfirm, onCancel, initialPassword, initialData });
+  } = useCreatePassword({ onConfirm, initialPassword, initialData });
 
   const folders = useAtomValue(foldersAtom);
   const [showPassword, setShowPassword] = useState(false);
@@ -124,7 +124,7 @@ export default function CreatePasswordModal({ onConfirm, onCancel, initialPasswo
               <Flex direction="column" gap="1">
                 <span className={styles.fieldLabel}>Select folder...</span>
                 <Flex gap="2">
-                  <Select.Root value={folder} onValueChange={setFolder} size="1" style={{ flex: 1 }}>
+                  <Select.Root value={folder} onValueChange={setFolder} size="1">
                     <Select.Trigger placeholder="Select folder..." />
                     <Select.Content>
                       {folders.map((f) => (

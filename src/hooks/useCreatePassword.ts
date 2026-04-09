@@ -1,16 +1,15 @@
-import { useState, useEffect } from 'react';
-import { Password, CreateFolderInput } from '@/types';
+import { useState, useEffect, useRef } from 'react';
+import { Password, CreateFolderInput, PasswordFormData } from '@/types';
 import { normalizeUrl } from '@/utils/url';
 import { useCreateFolder } from './useCreateFolder';
 
 interface UseCreatePasswordProps {
-  onConfirm: (passwordData: any) => void;
-  onCancel: () => void;
+  onConfirm: (passwordData: PasswordFormData) => void;
   initialPassword?: string;
   initialData?: Password;
 }
 
-export function useCreatePassword({ onConfirm, onCancel, initialPassword = '', initialData }: UseCreatePasswordProps) {
+export function useCreatePassword({ onConfirm, initialPassword = '', initialData }: UseCreatePasswordProps) {
   const [serviceName, setServiceName] = useState(initialData?.name || '');
   const [username, setUsername] = useState(initialData?.username || initialData?.email || '');
   const [password, setPassword] = useState(initialPassword || initialData?.password || '');
@@ -21,9 +20,10 @@ export function useCreatePassword({ onConfirm, onCancel, initialPassword = '', i
 
   const { confirmCreateFolder: createFolderAction } = useCreateFolder();
 
-  // Update password when initialPassword changes (from generator)
+  const prevInitialPassword = useRef(initialPassword);
   useEffect(() => {
-    if (initialPassword) {
+    if (initialPassword && initialPassword !== prevInitialPassword.current) {
+      prevInitialPassword.current = initialPassword;
       setPassword(initialPassword);
     }
   }, [initialPassword]);
@@ -53,7 +53,6 @@ export function useCreatePassword({ onConfirm, onCancel, initialPassword = '', i
   };
 
   return {
-    // State
     serviceName,
     username,
     password,
@@ -61,8 +60,6 @@ export function useCreatePassword({ onConfirm, onCancel, initialPassword = '', i
     notes,
     folder,
     showGenerator,
-
-    // Setters
     setServiceName,
     setUsername,
     setPassword,
@@ -70,8 +67,6 @@ export function useCreatePassword({ onConfirm, onCancel, initialPassword = '', i
     setNotes,
     setFolder,
     setShowGenerator,
-
-    // Handlers
     handleUseGeneratedPassword,
     confirmCreateFolder,
     handleSubmit,

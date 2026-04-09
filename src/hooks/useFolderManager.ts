@@ -45,15 +45,14 @@ export function useFolderManager() {
       .catch((err) => { console.error('Error updating folder:', err); throw err; });
   };
 
-  const confirmDeleteFolder = async () => {
+  const confirmDeleteFolder = () => {
     if (!selectedFolder) return;
-    try {
-      await deleteFolder(selectedFolder);
-      setIsDeleteFolderOpen(false);
-      setSelectedFolder(null);
-    } catch (err) {
-      console.error('Error deleting folder:', err);
-    }
+    deleteFolder(selectedFolder)
+      .then(() => {
+        setIsDeleteFolderOpen(false);
+        setSelectedFolder(null);
+      })
+      .catch((err) => console.error('Error deleting folder:', err));
   };
 
   const deleteFolderName = useMemo(

@@ -14,7 +14,6 @@ import * as styles from './index.css';
 
 export default function SettingsPage() {
   const {
-    folders,
     isChangeMasterPasswordOpen,
     isExportVaultOpen,
     isDestroyVaultOpen,

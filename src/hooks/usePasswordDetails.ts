@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { allPasswordsAtom, updatePasswordAtom, deletePasswordAtom, toggleFavoriteAtom, favoriteAlertAtom, foldersAtom } from '@/store/atoms';
+import { PasswordFormData } from '@/types';
 import { normalizeUrl } from '@/utils/url';
 
 export function usePasswordDetails() {
@@ -49,14 +50,15 @@ export function usePasswordDetails() {
     toastTimerRef.current = setTimeout(() => setToastMessage(''), 2000);
   };
 
-  const handleCopy = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      showTimedToast('Copied — clipboard clears in 45s', 'success');
-    } catch (err) {
-      console.error('Failed to copy:', err);
-      showTimedToast('Failed to copy', 'error');
-    }
+  const onError = (message: string) => (err: unknown) => {
+    console.error(message, err);
+    showTimedToast(message, 'error');
+  };
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text)
+      .then(() => showTimedToast('Copied — clipboard clears in 45s', 'success'))
+      .catch(onError('Failed to copy'));
   };
 
   const copyField = (field: string, value: string) => {
@@ -69,9 +71,9 @@ export function usePasswordDetails() {
 
   const handleEdit = () => setIsEditModalOpen(true);
 
-  const confirmEdit = async (passwordData: any) => {
+  const confirmEdit = (passwordData: PasswordFormData) => {
     if (!passwordId) return;
-    await updatePassword({
+    updatePassword({
       id: passwordId,
       updates: {
         name: passwordData.serviceName,
@@ -81,17 +83,21 @@ export function usePasswordDetails() {
         notes: passwordData.notes,
         folderId: passwordData.folder,
       },
-    });
-    setIsEditModalOpen(false);
+    })
+      .then(() => setIsEditModalOpen(false))
+      .catch(onError('Failed to update password'));
   };
 
   const handleDelete = () => setIsDeleteModalOpen(true);
 
-  const confirmDelete = async () => {
+  const confirmDelete = () => {
     if (!passwordId) return;
-    await deletePassword(passwordId);
-    setIsDeleteModalOpen(false);
-    navigate('/dashboard');
+    deletePassword(passwordId)
+      .then(() => {
+        setIsDeleteModalOpen(false);
+        navigate('/dashboard');
+      })
+      .catch(onError('Failed to delete password'));
   };
 
   useEffect(() => {

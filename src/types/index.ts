@@ -30,6 +30,15 @@ export interface CreatePasswordInput {
   folder?: string;
 }
 
+export interface PasswordFormData {
+  serviceName: string;
+  username: string;
+  password: string;
+  url: string;
+  notes: string;
+  folder: string;
+}
+
 export interface CreateFolderInput {
   name: string;
   icon: string;

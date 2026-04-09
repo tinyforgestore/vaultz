@@ -29,7 +29,7 @@ describe('useFolderManager', () => {
 
     it('shows limit alert when at MAX_FOLDERS', async () => {
       vi.useFakeTimers();
-      const { result } = renderHookWithProviders(() => useFolderManager());
+      renderHookWithProviders(() => useFolderManager());
       const fullList = Array.from({ length: MAX_FOLDERS }, (_, i) => makeFolder(`f${i}`));
       mockInvoke.mockResolvedValueOnce(fullList.map(f => ({ ...f, createdAt: f.createdAt.toISOString() })));
       await act(async () => { /* load initial data is not called here; set folders directly via atom */ });

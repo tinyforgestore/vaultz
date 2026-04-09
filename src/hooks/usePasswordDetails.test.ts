@@ -66,11 +66,10 @@ describe('usePasswordDetails', () => {
       expect(result.current.toastMessage).toBe('');
     });
 
-    it('auto-clears toastMessage after 2 seconds', () => {
+    it('auto-clears toastMessage after 2 seconds', async () => {
       vi.useFakeTimers();
       const { result } = setup();
-      // Trigger copy to show toast
-      act(() => result.current.copyField('username', 'user'));
+      await act(async () => result.current.copyField('username', 'user'));
       expect(result.current.toastMessage).not.toBe('');
       act(() => vi.advanceTimersByTime(2000));
       expect(result.current.toastMessage).toBe('');
@@ -79,10 +78,10 @@ describe('usePasswordDetails', () => {
   });
 
   describe('copyField', () => {
-    it('sets copiedField and clears after 1.5s', () => {
+    it('sets copiedField and clears after 1.5s', async () => {
       vi.useFakeTimers();
       const { result } = setup();
-      act(() => result.current.copyField('username', 'user'));
+      await act(async () => result.current.copyField('username', 'user'));
       expect(result.current.copiedField).toBe('username');
       act(() => vi.advanceTimersByTime(1500));
       expect(result.current.copiedField).toBeNull();

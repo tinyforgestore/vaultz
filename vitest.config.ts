@@ -10,6 +10,7 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/setupTests.ts'],
     clearMocks: true,
+    exclude: ['.claude/**', '**/node_modules/**', '**/dist/**', '**/.{idea,git,cache,output,temp}/**'],
     coverage: {
       provider: 'v8',
       include: ['src/**'],

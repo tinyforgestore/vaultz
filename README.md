@@ -23,8 +23,8 @@ A local-first desktop password manager built with Tauri 2, React 19, and SQLite.
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) 18+
-- [pnpm](https://pnpm.io/) 8+
+- [Node.js](https://nodejs.org/) 20+
+- [pnpm](https://pnpm.io/) 10
 - [Rust](https://www.rust-lang.org/tools/install) (stable toolchain)
 - [Tauri prerequisites](https://tauri.app/start/prerequisites/) for your platform
 
@@ -100,6 +100,8 @@ src/
 │   ├── usePasswordSelection.ts
 │   ├── useSessionActivity.ts
 │   └── useSettings.ts
+├── utils/
+│   └── passwordGenerator.ts  # buildPassword utility (charset constants + generation logic)
 ├── services/
 │   ├── sessionService.ts     # Auth, session timeout, activity tracking
 │   └── storageService.ts     # Tauri invoke wrappers for all backend commands
@@ -130,7 +132,14 @@ src-tauri/src/
 
 scripts/
 ├── pmcli                     # CLI tool: list/get/export vault entries from the terminal
-└── verify-vault              # Verify .pmvault file integrity
+├── verify-vault              # Verify .pmvault file integrity
+└── bump-version.sh           # Bump version in package.json, tauri.conf.json, Cargo.toml; commit + tag
+
+eslint.config.js              # ESLint flat config (typescript-eslint, react-hooks, react-refresh)
+.github/workflows/
+├── ci.yml                    # Lint + type-check on every push/PR to main
+├── build.yml                 # Tauri production build (macOS universal + Windows) on v* tags
+└── bump-version.yml          # Workflow dispatch: bump version via scripts/bump-version.sh
 ```
 
 ## Testing
@@ -142,7 +151,7 @@ pnpm test          # run once
 pnpm test --watch  # watch mode
 ```
 
-- **157 tests** across 15 files
+- **174 tests** across 16 files
 - Tests are co-located with source files (e.g. `useClipboard.ts` → `useClipboard.test.ts`)
 - Tauri APIs are mocked via `__mocks__/@tauri-apps/`
 - Jotai store is isolated per test via a custom `renderHookWithProviders` wrapper
@@ -178,11 +187,25 @@ cargo test
 
 ### Before committing (Frontend)
 
+ESLint and `tsc` run automatically via a Husky pre-commit hook — no manual steps needed for linting and type-checking. To verify manually before committing:
+
 ```bash
-pnpm lint
+pnpm lint           # ESLint
+pnpm tsc            # TypeScript type-check (no emit)
 pnpm test --run     # confirm all tests pass
-pnpm build          # confirm no TypeScript errors
 ```
+
+## CI/CD
+
+Three GitHub Actions workflows ship with the repo:
+
+| Workflow | Trigger | What it does |
+|---|---|---|
+| `ci.yml` | Push / PR to `main` | Runs `pnpm lint` then `pnpm tsc` on ubuntu-latest (Node 20, pnpm 10) |
+| `build.yml` | Push of a `v*` tag | Builds Tauri app for macOS (universal binary: arm64 + x86_64) and Windows |
+| `bump-version.yml` | Manual (`workflow_dispatch`) | Calls `scripts/bump-version.sh`, commits version bump, and tags the release |
+
+To cut a release, run the **Bump Version** workflow with the new semver (e.g. `1.2.0`). This commits the version bump and pushes a `v1.2.0` tag, which triggers the **Build** workflow automatically.
 
 ## Data Location
 
