@@ -1,4 +1,5 @@
 import { style } from '@vanilla-extract/css';
+import { themeVars } from '@/styles/theme.css';
 
 export const container = style({
   width: '490px',
@@ -9,7 +10,7 @@ export const container = style({
 
 export const topPanel = style({
   flexShrink: 0,
-  padding: '12px 12px 10px 12px',
+  padding: '20px 12px 10px 12px',
   borderBottom: '1px solid var(--gray-4)',
   marginBottom: '4px',
 });
@@ -112,7 +113,7 @@ export const mainContent = style({
   flex: 1,
   minHeight: 0,
   overflow: 'hidden',
-  backgroundColor: 'var(--gray-2)',
+  background: themeVars.pageBackground,
   position: 'relative',
 });
 

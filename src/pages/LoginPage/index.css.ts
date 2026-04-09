@@ -1,4 +1,5 @@
 import { style, keyframes } from '@vanilla-extract/css';
+import { themeVars } from '@/styles/theme.css';
 
 const shake = keyframes({
   '0%, 100%': { transform: 'translateX(0)' },
@@ -11,26 +12,54 @@ const shake = keyframes({
 export const container = style({
   width: '490px',
   height: '100vh',
-  backgroundColor: 'var(--gray-2)',
+  backgroundColor: themeVars.pageBgBase,
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
   justifyContent: 'center',
   padding: '24px',
   boxSizing: 'border-box',
+  position: 'relative',
+  overflow: 'hidden',
+  selectors: {
+    '&::before': {
+      content: '""',
+      position: 'absolute',
+      top: '30%',
+      left: '50%',
+      transform: 'translate(-50%, -50%)',
+      width: '340px',
+      height: '340px',
+      background: 'rgba(99, 102, 241, 0.18)',
+      filter: 'blur(100px)',
+      borderRadius: '50%',
+      pointerEvents: 'none',
+      zIndex: 0,
+    },
+  },
+});
+
+export const dragRegion = style({
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  height: '28px',
 });
 
 export const card = style({
   backgroundColor: 'white',
   border: '1px solid var(--gray-4)',
   borderRadius: '20px',
-  padding: '40px 32px',
+  padding: '30px 25px',
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
   width: '100%',
   boxSizing: 'border-box',
   boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
+  position: 'relative',
+  zIndex: 1,
 });
 
 export const cardShaking = style({
@@ -58,7 +87,7 @@ export const cardTitle = style({
   fontWeight: '800',
   color: 'var(--gray-12)',
   letterSpacing: '-0.02em',
-  marginBottom: '2px',
+  marginBottom: '-10px',
   textAlign: 'center',
 });
 

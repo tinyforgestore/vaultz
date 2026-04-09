@@ -1,23 +1,34 @@
 import { style } from '@vanilla-extract/css';
+import { themeVars } from '@/styles/theme.css';
 
 export const container = style({
   width: '490px',
   height: '100vh',
-  backgroundColor: 'white',
-  padding: '20px',
+  background: themeVars.pageBackground,
   display: 'grid',
   gridTemplateRows: 'auto 1fr',
-  boxSizing: 'border-box',
   overflow: 'hidden',
 });
 
-export const backButton = style({
-  width: 'fit-content',
+export const header = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+  padding: '20px 12px 10px 12px',
+  backgroundColor: 'white',
+  borderBottom: '1px solid var(--gray-4)',
+  flexShrink: 0,
+});
+
+export const headerTitle = style({
+  fontWeight: '700',
+  fontSize: '15px',
 });
 
 export const contentArea = style({
   minHeight: 0,
   overflowY: 'auto',
+  padding: '12px 20px 20px 20px',
 });
 
 export const folderRow = style({
@@ -25,7 +36,7 @@ export const folderRow = style({
 });
 
 export const folderList = style({
-  maxHeight: '64px',
+  maxHeight: '156px',
   overflowY: 'auto',
   display: 'flex',
   flexDirection: 'column',
@@ -36,6 +47,10 @@ export const folderList = style({
       display: 'none',
     },
   },
+});
+
+export const dangerCard = style({
+  border: '1px solid var(--red-7)',
 });
 
 export const securityButton = style({

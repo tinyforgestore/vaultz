@@ -1,9 +1,10 @@
 import { style } from '@vanilla-extract/css';
+import { themeVars } from '@/styles/theme.css';
 
 export const container = style({
   width: '490px',
   height: '100vh',
-  backgroundColor: 'var(--gray-2)',
+  background: themeVars.pageBackground,
   display: 'flex',
   flexDirection: 'column',
   overflow: 'hidden',
@@ -13,7 +14,7 @@ export const container = style({
 export const notFoundContainer = style({
   width: '490px',
   height: '100vh',
-  backgroundColor: 'var(--gray-2)',
+  background: themeVars.pageBackground,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -23,7 +24,7 @@ export const header = style({
   display: 'flex',
   alignItems: 'center',
   gap: '8px',
-  padding: '10px 12px',
+  padding: '20px 12px 10px 12px',
   backgroundColor: 'var(--gray-2)',
   borderBottom: '1px solid var(--gray-4)',
   flexShrink: 0,

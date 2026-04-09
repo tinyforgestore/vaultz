@@ -34,6 +34,7 @@ export default function LoginPage() {
   if (isCheckingDatabase) {
     return (
       <div className={styles.container}>
+        <div className={styles.dragRegion} data-tauri-drag-region />
         <div className={styles.card}>
           <div className={styles.lockIconBox}>
             <img src={vaultLogo} alt="Vault" className={styles.lockIcon} />
@@ -48,6 +49,7 @@ export default function LoginPage() {
   if (!isDatabaseExist) {
     return (
       <div className={styles.container}>
+        <div className={styles.dragRegion} data-tauri-drag-region />
         <div className={styles.card}>
           <div className={styles.lockIconBox}>
             <img src={vaultLogo} alt="Vault" className={styles.lockIcon} />
@@ -103,6 +105,7 @@ export default function LoginPage() {
 
   return (
     <div className={styles.container}>
+      <div className={styles.dragRegion} data-tauri-drag-region />
       <div className={`${styles.card}${shaking ? ` ${styles.cardShaking}` : ''}`}>
         <div className={styles.lockIconBox}>
           <img src={vaultLogo} alt="Vault" className={styles.lockIcon} />

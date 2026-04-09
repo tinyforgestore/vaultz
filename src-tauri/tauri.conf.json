@@ -12,12 +12,13 @@
   "app": {
     "windows": [
       {
-        "title": "Vaultz",
         "width": 500,
         "height": 600,
         "resizable": false,
         "fullscreen": false,
-        "center": true
+        "center": true,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true
       }
     ],
     "security": {

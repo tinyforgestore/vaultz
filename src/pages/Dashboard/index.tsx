@@ -57,7 +57,7 @@ export default function Dashboard() {
       <Flex className={styles.container}>
         <Flex direction="column" className={styles.mainContent}>
           <div className={styles.topPanel}>
-            <div className={styles.brandRow}>
+            <div className={styles.brandRow} data-tauri-drag-region>
               <Flex align="center" gap="2">
                 <div className={styles.brandLogo}>
                   <Layers size={14} style={{ color: 'var(--accent-11)' }} />

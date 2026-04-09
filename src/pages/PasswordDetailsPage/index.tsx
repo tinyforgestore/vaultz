@@ -43,7 +43,7 @@ export default function PasswordDetailsPage() {
 
   return (
     <Box className={styles.container}>
-      <div className={styles.header}>
+      <div className={styles.header} data-tauri-drag-region>
         <IconButton size="1" variant="ghost" onClick={handleBack}>
           <ArrowLeft size={16} />
         </IconButton>

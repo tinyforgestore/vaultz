@@ -1,11 +1,10 @@
 import { Trash2, Pencil, Lock, Folder, ArrowLeft, Download, ShieldOff, Search } from 'lucide-react';
 import { version, homepage } from '../../../package.json';
 import tinyForgeLogo from '@/assets/tinyforge-logo.svg';
-import { Flex, Card, Button, Heading, Box, IconButton, TextField } from '@radix-ui/themes';
+import { Flex, Card, Button, Heading, Box, IconButton, TextField, Text } from '@radix-ui/themes';
 import { Toast } from '@/components/Toast';
 import ChangeMasterPasswordModal from '@/components/modals/ChangeMasterPasswordModal';
 import ExportVaultModal from '@/components/modals/ExportVaultModal';
-import DestroyVaultModal from '@/components/modals/DestroyVaultModal';
 import CreateFolderModal from '@/components/modals/CreateFolderModal';
 import EditFolderModal from '@/components/modals/EditFolderModal';
 import DeleteFolderModal from '@/components/modals/DeleteFolderModal';
@@ -51,11 +50,11 @@ export default function SettingsPage() {
 
   return (
     <div className={styles.container}>
-      <div className={styles.backButton}>
-        <Button variant="ghost" size="1" onClick={handleBack}>
-          <ArrowLeft size={14} />
-          Back
-        </Button>
+      <div className={styles.header} data-tauri-drag-region>
+        <IconButton size="1" variant="ghost" onClick={handleBack}>
+          <ArrowLeft size={16} />
+        </IconButton>
+        <span className={styles.headerTitle}>Settings</span>
       </div>
 
       <div className={styles.contentArea}>
@@ -134,24 +133,40 @@ export default function SettingsPage() {
             </Flex>
           </Card>
 
-          <Card size="1">
+          <Card size="1" className={styles.dangerCard}>
             <Flex direction="column" gap="2">
               <Heading size="2" style={{ color: 'var(--red-11)' }}>
                 <Flex as="span" align="center" gap="1"><ShieldOff size={14} /> Danger Zone</Flex>
               </Heading>
-              <Button
-                size="1"
-                variant="soft"
-                color="red"
-                onClick={handleDestroyVault}
-                className={styles.securityButton}
-              >
-                Destroy Vault
-              </Button>
+              {isDestroyVaultOpen ? (
+                <>
+                  <Text size="2" color="gray">
+                    This will permanently destroy all vault data. This cannot be undone.
+                  </Text>
+                  <Flex gap="2">
+                    <Button size="1" variant="soft" color="gray" onClick={() => setIsDestroyVaultOpen(false)} style={{ flex: 1 }}>
+                      Cancel
+                    </Button>
+                    <Button size="1" color="red" onClick={confirmDestroyVault} style={{ flex: 1 }}>
+                      Destroy Vault
+                    </Button>
+                  </Flex>
+                </>
+              ) : (
+                <Button
+                  size="1"
+                  variant="soft"
+                  color="red"
+                  onClick={handleDestroyVault}
+                  className={styles.securityButton}
+                >
+                  Destroy Vault
+                </Button>
+              )}
             </Flex>
           </Card>
 
-          <Flex direction="column" align="center" gap="1" mt="5">
+          <Flex direction="column" align="center" gap="1">
             <img src={tinyForgeLogo} alt="Tiny Forge" width={48} height={48} />
             <Box className={styles.aboutText}>Vaultz v{version}</Box>
             <Box className={styles.aboutText}>
@@ -173,13 +188,6 @@ export default function SettingsPage() {
         <ExportVaultModal
           onConfirm={confirmExportVault}
           onCancel={() => setIsExportVaultOpen(false)}
-        />
-      )}
-
-      {isDestroyVaultOpen && (
-        <DestroyVaultModal
-          onConfirm={confirmDestroyVault}
-          onCancel={() => setIsDestroyVaultOpen(false)}
         />
       )}
 
