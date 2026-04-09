@@ -21,6 +21,13 @@ PACKAGE_JSON="$REPO_ROOT/package.json"
 TAURI_CONF="$REPO_ROOT/src-tauri/tauri.conf.json"
 CARGO_TOML="$REPO_ROOT/src-tauri/Cargo.toml"
 
+CURRENT_VERSION=$(node -e "console.log(require('$PACKAGE_JSON').version)")
+LOWER=$(printf '%s\n' "$CURRENT_VERSION" "$VERSION" | sort -V | head -1)
+if [[ "$LOWER" != "$CURRENT_VERSION" || "$CURRENT_VERSION" == "$VERSION" ]]; then
+  echo "Error: $VERSION must be greater than current version ($CURRENT_VERSION)." >&2
+  exit 1
+fi
+
 echo "Bumping version to $VERSION …"
 
 node -e "
