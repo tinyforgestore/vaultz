@@ -1,5 +1,6 @@
-import { Trash2, Pencil, Lock, Folder, ArrowLeft, Info, Download, ShieldOff, Search } from 'lucide-react';
-import { version } from '../../../package.json';
+import { Trash2, Pencil, Lock, Folder, ArrowLeft, Download, ShieldOff, Search } from 'lucide-react';
+import { version, homepage } from '../../../package.json';
+import tinyForgeLogo from '@/assets/tinyforge-logo.svg';
 import { Flex, Card, Button, Heading, Box, IconButton, TextField } from '@radix-ui/themes';
 import { Toast } from '@/components/Toast';
 import ChangeMasterPasswordModal from '@/components/modals/ChangeMasterPasswordModal';
@@ -150,15 +151,14 @@ export default function SettingsPage() {
             </Flex>
           </Card>
 
-          <Card size="1">
-            <Flex direction="column" gap="1">
-              <Heading size="2">
-                <Flex as="span" align="center" gap="1"><Info size={14} /> About</Flex>
-              </Heading>
-              <Box className={styles.aboutText}>Vaultz v{version}</Box>
-              <Box className={styles.aboutText}>Built with Tauri + React</Box>
-            </Flex>
-          </Card>
+          <Flex direction="column" align="center" gap="1" mt="5">
+            <img src={tinyForgeLogo} alt="Tiny Forge" width={48} height={48} />
+            <Box className={styles.aboutText}>Vaultz v{version}</Box>
+            <Box className={styles.aboutText}>
+              © {new Date().getFullYear()}{' '}
+              <a href={homepage} target="_blank" rel="noopener noreferrer">Tiny Forge</a>
+            </Box>
+          </Flex>
         </Flex>
       </div>
 

@@ -15,10 +15,7 @@ edition = "2021"
 #   cargo run --manifest-path scripts/pmcli/Cargo.toml -- import ~/Desktop/vault.pmvault
 
 [dependencies]
-aes-gcm = "0.10"
-argon2 = "0.5"
-base64 = "0.22"
+vaultz-core = { path = "../../vaultz-core" }
 clap = { version = "4", features = ["derive"] }
-password-hash = { version = "0.5", features = ["getrandom"] }
 rpassword = "7"
 rusqlite = { version = "0.31", features = ["bundled"] }

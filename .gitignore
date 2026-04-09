@@ -15,8 +15,10 @@ dist-ssr
 # Local task tracking (not for repo)
 TICKETS.md
 
-# Script build artifacts
+# Rust build artifacts
+/target
 scripts/*/target/
+rust_out
 
 # Editor directories and files
 .vscode/*

@@ -1,0 +1,3 @@
+[workspace]
+members = ["vaultz-core", "scripts/pmcli", "src-tauri"]
+resolver = "2"

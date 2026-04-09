@@ -2,6 +2,7 @@
   "name": "vaultz",
   "private": true,
   "version": "1.0.4",
+  "homepage": "https://tinyforge.store",
   "type": "module",
   "scripts": {
     "dev": "vite",
