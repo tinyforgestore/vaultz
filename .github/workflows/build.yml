@@ -1,18 +1,42 @@
 name: Build & Release
 
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
 
 jobs:
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    outputs:
+      release_id: ${{ steps.create.outputs.release_id }}
+
+    steps:
+      - name: Create release
+        id: create
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ inputs.tag }}" \
+            --repo "${{ github.repository }}" \
+            --title "Vaultz ${{ inputs.tag }}" \
+            --notes "See the release notes for ${{ inputs.tag }}."
+          ID=$(gh api "repos/${{ github.repository }}/releases/tags/${{ inputs.tag }}" --jq .id)
+          echo "release_id=$ID" >> $GITHUB_OUTPUT
+
   build-macos:
     name: Build macOS (.dmg)
+    needs: create-release
     runs-on: macos-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
 
       - name: Set up Node
         uses: actions/setup-node@v4
@@ -41,23 +65,21 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Ad-hoc signing — no Apple Developer account required
           APPLE_SIGNING_IDENTITY: "-"
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: "Vaultz ${{ github.ref_name }}"
-          releaseBody: "See the release notes for ${{ github.ref_name }}."
-          releaseDraft: false
-          prerelease: false
+          releaseId: ${{ needs.create-release.outputs.release_id }}
           args: --target universal-apple-darwin
 
   build-windows:
     name: Build Windows (.msi / .exe)
+    needs: create-release
     runs-on: windows-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
 
       - name: Set up Node
         uses: actions/setup-node@v4
@@ -84,10 +106,5 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # No code-signing for Windows in this configuration
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: "Vaultz ${{ github.ref_name }}"
-          releaseBody: "See the release notes for ${{ github.ref_name }}."
-          releaseDraft: false
-          prerelease: false
+          releaseId: ${{ needs.create-release.outputs.release_id }}

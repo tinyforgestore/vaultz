@@ -34,3 +34,11 @@ jobs:
 
       - name: Bump version files, commit, and tag
         run: bash scripts/bump-version.sh ${{ github.event.inputs.version }}
+
+  build:
+    name: Build & Release
+    needs: bump
+    uses: ./.github/workflows/build.yml
+    with:
+      tag: v${{ github.event.inputs.version }}
+    secrets: inherit
