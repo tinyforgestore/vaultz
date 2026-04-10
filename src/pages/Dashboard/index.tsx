@@ -1,7 +1,9 @@
-import { Search, Settings, Plus, LogOut, CheckSquare, Trash2, Heart, HeartOff, Layers, Copy } from 'lucide-react';
+import { Search, Settings, Plus, LogOut, CheckSquare, Trash2, Heart, HeartOff, Layers, Copy, Crown } from 'lucide-react';
 import { Flex, TextField, Box, IconButton, Dialog, Text, Button } from '@radix-ui/themes';
 import DeletePasswordModal from '@/components/modals/DeletePasswordModal';
 import CreateFolderModal from '@/components/modals/CreateFolderModal';
+import UpgradeModal, { GUMROAD_PRODUCT_URL } from '@/components/modals/UpgradeModal';
+import { openUrl } from '@tauri-apps/plugin-opener';
 import { useDashboard } from '@/hooks/useDashboard';
 import { FOLDER_ICON_MAP } from '@/constants/folders';
 import CreatePasswordModal from '@/components/modals/CreatePasswordModal';
@@ -20,6 +22,7 @@ export default function Dashboard() {
     isCreatePasswordOpen,
     isLogoutConfirmOpen,
     isCreateFolderOpen,
+    upgradeLimitType,
     isSelectionMode,
     isBulkDeleteOpen,
     selectedIds,
@@ -28,11 +31,13 @@ export default function Dashboard() {
     clipboardToast,
     showFolderTag,
     visibleFolders,
+    licenseStatus,
     setSelectedFolder,
     setSearchQuery,
     setIsCreatePasswordOpen,
     setIsLogoutConfirmOpen,
     setIsCreateFolderOpen,
+    setUpgradeLimitType,
     setIsBulkDeleteOpen,
     handlePasswordClick,
     handleSettingsClick,
@@ -89,6 +94,16 @@ export default function Dashboard() {
               </TextField.Slot>
             </TextField.Root>
 
+            {!licenseStatus?.is_active && (
+              <div className={styles.upgradeBanner}>
+                <Crown size={12} />
+                <span className={styles.upgradeBannerText}>Upgrade to Pro — Unlimited entries &amp; folders</span>
+                <button className={styles.upgradeBannerCta} onClick={() => openUrl(GUMROAD_PRODUCT_URL)}>
+                  Learn More →
+                </button>
+              </div>
+            )}
+
             <div className={styles.tabStrip}>
               {visibleFolders.map((folder) => {
                 const Icon = FOLDER_ICON_MAP[folder.icon] || FOLDER_ICON_MAP['folder'];
@@ -113,12 +128,12 @@ export default function Dashboard() {
 
           <Flex direction="column" gap="2" className={styles.passwordList}>
             {passwords.length === 0 ? (
-              <Box className={styles.emptyState}>
-                <Box className={styles.emptyIcon}>
+              <div className={styles.emptyState}>
+                <div className={styles.emptyIcon}>
                   <Search size={22} />
-                </Box>
+                </div>
                 <Text size="2">No passwords found</Text>
-              </Box>
+              </div>
             ) : (
               passwords.map((password) => (
                 <PasswordCard
@@ -166,6 +181,7 @@ export default function Dashboard() {
               </IconButton>
             </Box>
           )}
+
         </Flex>
       </Flex>
 
@@ -214,6 +230,13 @@ export default function Dashboard() {
         <Box className={styles.toastContainer} style={{ bottom: favoriteAlert ? 60 : 20 }}>
           <Toast message={clipboardToast} icon={<Copy size={14} />} />
         </Box>
+      )}
+
+      {upgradeLimitType && (
+        <UpgradeModal
+          limitType={upgradeLimitType}
+          onClose={() => setUpgradeLimitType(null)}
+        />
       )}
     </>
   );

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { invoke } from '@tauri-apps/api/core';
 import {
   foldersAtom,
   allPasswordsAtom,
@@ -13,9 +14,11 @@ import {
   logoutAtom,
   loadInitialDataAtom,
   isAuthenticatedAtom,
+  licenseStatusAtom,
 } from '@/store/atoms';
 import { SPECIAL_FOLDERS, VIRTUAL_FOLDERS, isSpecialFolder } from '@/constants/folders';
 import { CreatePasswordInput, CreateFolderInput } from '@/types';
+import { LicenseStatus } from '@/types/license';
 import { sessionService } from '@/services/sessionService';
 import { useClipboard } from './useClipboard';
 import { usePasswordSelection } from './usePasswordSelection';
@@ -27,6 +30,8 @@ export function useDashboard() {
   const [isCreatePasswordOpen, setIsCreatePasswordOpen] = useState(false);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
+  const [upgradeLimitType, setUpgradeLimitType] = useState<'passwords' | 'folders' | null>(null);
+  const [licenseStatus, setLicenseStatus] = useAtom(licenseStatusAtom);
 
   const realFolders = useAtomValue(foldersAtom);
   const folders = useMemo(() => [...VIRTUAL_FOLDERS, ...realFolders], [realFolders]);
@@ -71,6 +76,12 @@ export function useDashboard() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  useEffect(() => {
+    invoke<LicenseStatus>('get_license_status')
+      .then((status) => setLicenseStatus(status))
+      .catch(() => setLicenseStatus(null));
+  }, []);
+
   const handlePasswordClick = (passwordId: string) => navigate(`/password/${passwordId}`);
   const handleSettingsClick = () => navigate('/settings');
   const handleLogout = () => setIsLogoutConfirmOpen(true);
@@ -84,15 +95,36 @@ export function useDashboard() {
 
   const handleCreatePassword = () => setIsCreatePasswordOpen(true);
 
-  const confirmCreatePassword = async (passwordData: CreatePasswordInput) => {
-    await createPassword(passwordData);
-    setIsCreatePasswordOpen(false);
+  const confirmCreatePassword = (passwordData: CreatePasswordInput) => {
+    return createPassword(passwordData)
+      .then(() => {
+        setIsCreatePasswordOpen(false);
+      })
+      .catch((err: unknown) => {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (msg.includes('LIMIT_REACHED:passwords')) {
+          setIsCreatePasswordOpen(false);
+          setUpgradeLimitType('passwords');
+        } else {
+          throw err;
+        }
+      });
   };
 
   const confirmCreateFolder = (folderData: CreateFolderInput) => {
-    return createFolderAction(folderData).then(() => {
-      setIsCreateFolderOpen(false);
-    });
+    return createFolderAction(folderData)
+      .then(() => {
+        setIsCreateFolderOpen(false);
+      })
+      .catch((err: unknown) => {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (msg.includes('LIMIT_REACHED:folders')) {
+          setIsCreateFolderOpen(false);
+          setUpgradeLimitType('folders');
+        } else {
+          throw err;
+        }
+      });
   };
 
   const showFolderTag = isSpecialFolder(selectedFolder);
@@ -124,9 +156,11 @@ export function useDashboard() {
     isCreatePasswordOpen,
     isLogoutConfirmOpen,
     isCreateFolderOpen,
+    upgradeLimitType,
     favoriteAlert,
     showFolderTag,
     visibleFolders,
+    licenseStatus,
     ...clipboard,
     ...selection,
 
@@ -135,6 +169,7 @@ export function useDashboard() {
     setIsCreatePasswordOpen,
     setIsLogoutConfirmOpen,
     setIsCreateFolderOpen,
+    setUpgradeLimitType,
 
     handlePasswordClick,
     handleSettingsClick,

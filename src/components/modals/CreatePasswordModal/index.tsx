@@ -113,7 +113,7 @@ export default function CreatePasswordModal({ onConfirm, onCancel, initialPasswo
                 <span className={styles.fieldLabel}>URL</span>
                 <TextField.Root
                   size="1"
-                  type="url"
+                  type="text"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                 />

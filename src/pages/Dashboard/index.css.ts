@@ -1,5 +1,12 @@
 import { style } from '@vanilla-extract/css';
 import { themeVars } from '@/styles/theme.css';
+import {
+  upgradeBanner as sharedUpgradeBanner,
+  upgradeBannerText,
+  upgradeBannerCta,
+} from '@/styles/shared.css';
+
+export { upgradeBannerText, upgradeBannerCta };
 
 export const container = style({
   width: '490px',
@@ -90,7 +97,8 @@ export const emptyState = style({
   alignItems: 'center',
   justifyContent: 'center',
   gap: '12px',
-  paddingTop: '60px',
+  minHeight: '200px',
+  textAlign: 'center',
   color: 'var(--gray-10)',
 });
 
@@ -172,6 +180,8 @@ export const newFolderButton = style({
     backgroundColor: 'var(--gray-5)',
   },
 });
+
+export const upgradeBanner = style([sharedUpgradeBanner, { marginTop: '6px' }]);
 
 export const bulkToolbar = style({
   position: 'absolute',

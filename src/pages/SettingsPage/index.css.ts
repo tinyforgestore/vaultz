@@ -1,5 +1,12 @@
 import { style } from '@vanilla-extract/css';
 import { themeVars } from '@/styles/theme.css';
+import {
+  upgradeBanner as sharedUpgradeBanner,
+  upgradeBannerText,
+  upgradeBannerCta,
+} from '@/styles/shared.css';
+
+export { upgradeBannerText as aboutUpgradeBannerText, upgradeBannerCta as aboutUpgradeBannerCta };
 
 export const container = style({
   width: '490px',
@@ -67,4 +74,14 @@ export const toastContainer = style({
   left: '50%',
   transform: 'translateX(-50%)',
   zIndex: 1000,
+});
+
+export const aboutUpgradeBanner = style([sharedUpgradeBanner, { width: '100%', boxSizing: 'border-box' }]);
+
+export const statusDot = style({
+  width: '8px',
+  height: '8px',
+  borderRadius: '50%',
+  backgroundColor: 'var(--green-9)',
+  flexShrink: 0,
 });

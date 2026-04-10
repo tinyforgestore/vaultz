@@ -27,6 +27,13 @@ pub fn create_folder(
 ) -> Result<FolderEntry, String> {
     let name = validate_folder_name(&input.name)?;
     with_db(&db_state, |db| {
+        // Enforce free-tier limit of 5 folders unless a valid license is active.
+        if !db.is_license_active() {
+            let count = db.count_folders().map_err(|e| e.to_string())?;
+            if count >= super::license::FREE_FOLDER_LIMIT {
+                return Err("LIMIT_REACHED:folders".to_string());
+            }
+        }
         db.create_folder(name, &input.icon, false)
             .map_err(|e| e.to_string())
     })

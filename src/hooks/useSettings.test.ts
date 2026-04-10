@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { act } from '@testing-library/react';
 
 vi.mock('@tauri-apps/api/core');
@@ -18,6 +18,10 @@ function setup() {
 }
 
 describe('useSettings', () => {
+  beforeEach(() => {
+    mockInvoke.mockClear();
+    mockInvoke.mockResolvedValue(null);
+  });
   describe('modal openers', () => {
     it('handleChangeMasterPassword opens modal', () => {
       const { result } = setup();
@@ -40,7 +44,9 @@ describe('useSettings', () => {
 
   describe('confirmChangeMasterPassword', () => {
     it('closes modal on success', async () => {
-      mockInvoke.mockResolvedValueOnce(true);
+      mockInvoke.mockImplementation((cmd: string) =>
+        cmd === 'change_master_password' ? Promise.resolve(true) : Promise.resolve(null)
+      );
       const { result } = setup();
       act(() => result.current.setIsChangeMasterPasswordOpen(true));
       await act(async () => result.current.confirmChangeMasterPassword('old', 'new'));
@@ -48,7 +54,9 @@ describe('useSettings', () => {
     });
 
     it('keeps modal open on failure', async () => {
-      mockInvoke.mockResolvedValueOnce(false);
+      mockInvoke.mockImplementation((cmd: string) =>
+        cmd === 'change_master_password' ? Promise.resolve(false) : Promise.resolve(null)
+      );
       const { result } = setup();
       act(() => result.current.setIsChangeMasterPasswordOpen(true));
       await act(async () => result.current.confirmChangeMasterPassword('wrong', 'new'));
@@ -56,7 +64,9 @@ describe('useSettings', () => {
     });
 
     it('calls change_master_password with correct args', async () => {
-      mockInvoke.mockResolvedValueOnce(true);
+      mockInvoke.mockImplementation((cmd: string) =>
+        cmd === 'change_master_password' ? Promise.resolve(true) : Promise.resolve(null)
+      );
       const { result } = setup();
       await act(async () => result.current.confirmChangeMasterPassword('old', 'new'));
       expect(mockInvoke).toHaveBeenCalledWith('change_master_password', {
@@ -85,7 +95,7 @@ describe('useSettings', () => {
       const { result } = setup();
       act(() => result.current.setIsExportVaultOpen(true));
       await act(async () => result.current.confirmExportVault('passphrase'));
-      expect(mockInvoke).not.toHaveBeenCalled();
+      expect(mockInvoke).not.toHaveBeenCalledWith('export_vault', expect.anything());
       expect(result.current.isExportVaultOpen).toBe(true);
     });
   });

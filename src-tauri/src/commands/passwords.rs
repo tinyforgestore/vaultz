@@ -65,6 +65,13 @@ pub fn create_password(
         ..input
     };
     with_db(&db_state, |db| {
+        // Enforce free-tier limit of 20 passwords unless a valid license is active.
+        if !db.is_license_active() {
+            let count = db.count_passwords().map_err(|e| e.to_string())?;
+            if count >= super::license::FREE_PASSWORD_LIMIT {
+                return Err("LIMIT_REACHED:passwords".to_string());
+            }
+        }
         let entry = db.create_password(&enc_input).map_err(|e| e.to_string())?;
         decrypt_entry(&key, entry)
     })
