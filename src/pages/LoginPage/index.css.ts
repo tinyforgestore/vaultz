@@ -260,3 +260,7 @@ export const toastContainer = style({
   zIndex: 1000,
   whiteSpace: 'nowrap',
 });
+
+export const dialogContent = style({
+  maxWidth: '380px',
+});

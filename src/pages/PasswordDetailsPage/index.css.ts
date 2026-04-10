@@ -159,3 +159,11 @@ export const toastContainer = style({
   zIndex: 1000,
   whiteSpace: 'nowrap',
 });
+
+export const favoriteButton = style({
+  color: 'var(--amber-9)',
+});
+
+export const deleteActionButton = style({
+  flex: 1,
+});

@@ -13,16 +13,19 @@ import {
   favoriteAlertAtom,
   logoutAtom,
   loadInitialDataAtom,
-  isAuthenticatedAtom,
   licenseStatusAtom,
+  isProAtom,
+  activeModalAtom,
+  pendingLicenseKeyAtom,
 } from '@/store/atoms';
-import { SPECIAL_FOLDERS, VIRTUAL_FOLDERS, isSpecialFolder } from '@/constants/folders';
+import { SPECIAL_FOLDERS, VIRTUAL_FOLDERS, isSpecialFolder, LIMIT_REACHED_PASSWORDS, LIMIT_REACHED_FOLDERS } from '@/constants/folders';
 import { CreatePasswordInput, CreateFolderInput } from '@/types';
 import { LicenseStatus } from '@/types/license';
 import { sessionService } from '@/services/sessionService';
 import { useClipboard } from './useClipboard';
 import { usePasswordSelection } from './usePasswordSelection';
 import { useCreateFolder } from './useCreateFolder';
+import { useLimitCheck } from './useLimitCheck';
 
 const FAVORITES_ID = SPECIAL_FOLDERS.FAVORITES.toString();
 
@@ -30,8 +33,10 @@ export function useDashboard() {
   const [isCreatePasswordOpen, setIsCreatePasswordOpen] = useState(false);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
-  const [upgradeLimitType, setUpgradeLimitType] = useState<'passwords' | 'folders' | null>(null);
-  const [licenseStatus, setLicenseStatus] = useAtom(licenseStatusAtom);
+  const setLicenseStatus = useSetAtom(licenseStatusAtom);
+  const isPro = useAtomValue(isProAtom);
+  const setActiveModal = useSetAtom(activeModalAtom);
+  const setPendingLicenseKey = useSetAtom(pendingLicenseKeyAtom);
 
   const realFolders = useAtomValue(foldersAtom);
   const folders = useMemo(() => [...VIRTUAL_FOLDERS, ...realFolders], [realFolders]);
@@ -65,11 +70,11 @@ export function useDashboard() {
   const toggleFavorite = useSetAtom(toggleFavoriteAtom);
   const [favoriteAlert, setFavoriteAlert] = useAtom(favoriteAlertAtom);
   const logout = useSetAtom(logoutAtom);
-  const setIsAuthenticated = useSetAtom(isAuthenticatedAtom);
   const loadData = useSetAtom(loadInitialDataAtom);
   const navigate = useNavigate();
 
   const { confirmCreateFolder: createFolderAction } = useCreateFolder();
+  const { checkAndOpen } = useLimitCheck();
 
   const clipboard = useClipboard();
   const selection = usePasswordSelection(passwords);
@@ -80,7 +85,7 @@ export function useDashboard() {
     invoke<LicenseStatus>('get_license_status')
       .then((status) => setLicenseStatus(status))
       .catch(() => setLicenseStatus(null));
-  }, []);
+  }, [setLicenseStatus]);
 
   const handlePasswordClick = (passwordId: string) => navigate(`/password/${passwordId}`);
   const handleSettingsClick = () => navigate('/settings');
@@ -89,11 +94,16 @@ export function useDashboard() {
   const confirmLogout = async () => {
     await sessionService.logout();
     logout();
-    setIsAuthenticated(false);
     navigate('/login');
   };
 
-  const handleCreatePassword = () => setIsCreatePasswordOpen(true);
+  const handleCreatePassword = () => {
+    checkAndOpen('password', () => setIsCreatePasswordOpen(true));
+  };
+
+  const handleAddFolder = () => {
+    checkAndOpen('folder', () => setIsCreateFolderOpen(true));
+  };
 
   const confirmCreatePassword = (passwordData: CreatePasswordInput) => {
     return createPassword(passwordData)
@@ -102,9 +112,9 @@ export function useDashboard() {
       })
       .catch((err: unknown) => {
         const msg = err instanceof Error ? err.message : String(err);
-        if (msg.includes('LIMIT_REACHED:passwords')) {
+        if (msg.includes(LIMIT_REACHED_PASSWORDS)) {
           setIsCreatePasswordOpen(false);
-          setUpgradeLimitType('passwords');
+          setActiveModal('upgrade');
         } else {
           throw err;
         }
@@ -118,9 +128,9 @@ export function useDashboard() {
       })
       .catch((err: unknown) => {
         const msg = err instanceof Error ? err.message : String(err);
-        if (msg.includes('LIMIT_REACHED:folders')) {
+        if (msg.includes(LIMIT_REACHED_FOLDERS)) {
           setIsCreateFolderOpen(false);
-          setUpgradeLimitType('folders');
+          setActiveModal('upgrade');
         } else {
           throw err;
         }
@@ -156,11 +166,10 @@ export function useDashboard() {
     isCreatePasswordOpen,
     isLogoutConfirmOpen,
     isCreateFolderOpen,
-    upgradeLimitType,
     favoriteAlert,
     showFolderTag,
     visibleFolders,
-    licenseStatus,
+    isPro,
     ...clipboard,
     ...selection,
 
@@ -169,7 +178,8 @@ export function useDashboard() {
     setIsCreatePasswordOpen,
     setIsLogoutConfirmOpen,
     setIsCreateFolderOpen,
-    setUpgradeLimitType,
+    setActiveModal,
+    setPendingLicenseKey,
 
     handlePasswordClick,
     handleSettingsClick,
@@ -177,6 +187,7 @@ export function useDashboard() {
     confirmLogout,
     toggleFavorite,
     handleCreatePassword,
+    handleAddFolder,
     confirmCreatePassword,
     confirmCreateFolder,
   };

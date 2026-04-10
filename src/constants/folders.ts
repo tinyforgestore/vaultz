@@ -30,8 +30,12 @@ export const FOLDER_ICON_PICKER: { id: string; Icon: LucideIcon }[] = PICKER_IDS
   Icon: FOLDER_ICON_MAP[id],
 }));
 
-export const MAX_FOLDERS = 10;
+export const MAX_FOLDERS = 5;
+export const MAX_PASSWORDS = 20;
 export const MAX_FOLDER_NAME_LENGTH = 30;
+
+export const LIMIT_REACHED_PASSWORDS = 'LIMIT_REACHED:passwords';
+export const LIMIT_REACHED_FOLDERS = 'LIMIT_REACHED:folders';
 
 // Virtual folders that exist only in the UI, not in the database
 export const VIRTUAL_FOLDERS: Folder[] = [

@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { Dialog, Flex, TextField, Button, IconButton } from '@radix-ui/themes';
+import * as styles from './index.css';
+import { fieldLabel } from '@/styles/shared.css';
 
 interface ChangeMasterPasswordModalProps {
   onConfirm: (currentPassword: string, newPassword: string) => void;
@@ -20,14 +22,14 @@ export default function ChangeMasterPasswordModal({ onConfirm, onCancel }: Chang
 
   return (
     <Dialog.Root open={true} onOpenChange={(open) => !open && onCancel()}>
-      <Dialog.Content style={{ maxWidth: 380 }}>
+      <Dialog.Content className={styles.dialogContent}>
         <Dialog.Title size="4">Change Master Password</Dialog.Title>
-        
+
         <form onSubmit={handleSubmit}>
           <Flex direction="column" gap="2">
             <label>
               <Flex direction="column" gap="1">
-                <span style={{ fontSize: '13px' }}>Current Password *</span>
+                <span className={fieldLabel}>Current Password *</span>
                 <TextField.Root
                   size="1"
                   type={showPasswords ? 'text' : 'password'}
@@ -46,7 +48,7 @@ export default function ChangeMasterPasswordModal({ onConfirm, onCancel }: Chang
 
             <label>
               <Flex direction="column" gap="1">
-                <span style={{ fontSize: '13px' }}>New Password *</span>
+                <span className={fieldLabel}>New Password *</span>
                 <TextField.Root
                   size="1"
                   type={showPasswords ? 'text' : 'password'}
@@ -65,7 +67,7 @@ export default function ChangeMasterPasswordModal({ onConfirm, onCancel }: Chang
 
             <label>
               <Flex direction="column" gap="1">
-                <span style={{ fontSize: '13px' }}>Confirm New Password *</span>
+                <span className={fieldLabel}>Confirm New Password *</span>
                 <TextField.Root
                   size="1"
                   type={showPasswords ? 'text' : 'password'}

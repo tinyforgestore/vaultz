@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import clsx from 'clsx';
 import { Check, Copy, Star } from 'lucide-react';
 import { Card, Flex, Box, Heading, IconButton } from '@radix-ui/themes';
 import { Password } from '@/types';
@@ -38,7 +39,7 @@ export const PasswordCard = memo(function PasswordCard({
   return (
     <Card
       size="1"
-      className={`${styles.passwordCard}${isSelectionMode && isSelected ? ` ${styles.selectedCard}` : ''}`}
+      className={clsx(styles.passwordCard, isSelectionMode && isSelected && styles.selectedCard)}
       onClick={() => isSelectionMode ? onToggleSelection() : onCardClick()}
     >
       <Flex align="center" gap="3">
@@ -59,7 +60,7 @@ export const PasswordCard = memo(function PasswordCard({
             {getInitials(password.name)}
           </div>
         )}
-        <Box style={{ flex: 1, minWidth: 0 }}>
+        <Box className={styles.cardBody}>
           <Flex align="center" gap="1" mb="0">
             <Heading size="2" mb="0" className={styles.passwordTitle}>{password.name}</Heading>
             {password.isFavorite && <Star size={11} className={styles.starBadge} fill="currentColor" />}

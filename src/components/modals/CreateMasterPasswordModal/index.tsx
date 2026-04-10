@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Dialog, Flex, Text, TextField, Button, IconButton } from '@radix-ui/themes';
 import { Lock, Eye, EyeOff } from 'lucide-react';
+import * as styles from './index.css';
+import { fieldLabel } from '@/styles/shared.css';
 
 interface CreateMasterPasswordModalProps {
   open: boolean;
@@ -27,7 +29,7 @@ export function CreateMasterPasswordModal({
 
   return (
     <Dialog.Root open={open}>
-      <Dialog.Content style={{ maxWidth: 380 }}>
+      <Dialog.Content className={styles.dialogContent}>
         <Dialog.Title>
           <Flex align="center" gap="2">
             <Lock size={20} />
@@ -47,7 +49,7 @@ export function CreateMasterPasswordModal({
           )}
 
           <label>
-            <Text as="div" size="1" mb="1" weight="bold" style={{ fontSize: '13px' }}>
+            <Text as="div" size="1" mb="1" weight="bold" className={fieldLabel}>
               Master Password
             </Text>
             <TextField.Root
@@ -67,7 +69,7 @@ export function CreateMasterPasswordModal({
           </label>
 
           <label>
-            <Text as="div" size="1" mb="1" weight="bold" style={{ fontSize: '13px' }}>
+            <Text as="div" size="1" mb="1" weight="bold" className={fieldLabel}>
               Confirm Password
             </Text>
             <TextField.Root
@@ -93,8 +95,8 @@ export function CreateMasterPasswordModal({
               Cancel
             </Button>
           </Dialog.Close>
-          <Button 
-            size="2" 
+          <Button
+            size="2"
             onClick={onCreate}
             disabled={isLoading}
           >

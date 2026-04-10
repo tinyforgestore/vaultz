@@ -30,8 +30,8 @@ export const brandRow = style({
 });
 
 export const brandLogo = style({
-  width: '28px',
-  height: '28px',
+  width: '32px',
+  height: '32px',
   borderRadius: '8px',
   display: 'flex',
   alignItems: 'center',
@@ -182,6 +182,18 @@ export const newFolderButton = style({
 });
 
 export const upgradeBanner = style([sharedUpgradeBanner, { marginTop: '6px' }]);
+
+export const logoutDialogContent = style({
+  maxWidth: '380px',
+});
+
+export const toastDefault = style({
+  bottom: '20px',
+});
+
+export const toastElevated = style({
+  bottom: '60px',
+});
 
 export const bulkToolbar = style({
   position: 'absolute',

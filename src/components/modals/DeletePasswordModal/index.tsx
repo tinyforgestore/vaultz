@@ -1,5 +1,7 @@
 import { AlertTriangle } from 'lucide-react';
 import { Dialog, Flex, Button, Text } from '@radix-ui/themes';
+import * as styles from './index.css';
+import { fullWidth } from '@/styles/shared.css';
 
 interface DeletePasswordModalProps {
   passwordName: string | number;
@@ -12,7 +14,7 @@ export default function DeletePasswordModal({ passwordName, onConfirm, onCancel 
 
   return (
     <Dialog.Root open={true} onOpenChange={(open) => !open && onCancel()}>
-      <Dialog.Content style={{ maxWidth: 450 }}>
+      <Dialog.Content className={styles.dialogContent}>
         <Flex direction="column" gap="3" align="center">
           <AlertTriangle size={48} color="#f59e0b" />
 
@@ -32,7 +34,7 @@ export default function DeletePasswordModal({ passwordName, onConfirm, onCancel 
           )}
           <Text align="center">This action cannot be undone.</Text>
 
-          <Flex gap="3" mt="4" justify="end" style={{ width: '100%' }}>
+          <Flex gap="3" mt="4" justify="end" className={fullWidth}>
             <Dialog.Close>
               <Button variant="soft" color="gray">Cancel</Button>
             </Dialog.Close>

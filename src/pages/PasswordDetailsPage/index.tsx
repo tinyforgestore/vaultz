@@ -48,7 +48,7 @@ export default function PasswordDetailsPage() {
           <ArrowLeft size={16} />
         </IconButton>
         <span className={styles.headerTitle}>{password.name}</span>
-        <IconButton size="1" variant="ghost" onClick={handleToggleFavorite} style={{ color: 'var(--amber-9)' }}>
+        <IconButton size="1" variant="ghost" onClick={handleToggleFavorite} className={styles.favoriteButton}>
           <Star size={15} fill={password.isFavorite ? 'currentColor' : 'none'} />
         </IconButton>
         <Button size="1" variant="soft" onClick={handleEdit}>Edit</Button>
@@ -169,10 +169,10 @@ export default function PasswordDetailsPage() {
             <Heading size="3" mb="1">Delete entry?</Heading>
             <Text size="2" color="gray"><strong>{password.name}</strong> will be permanently deleted.</Text>
             <Flex gap="2" mt="3">
-              <Button variant="soft" color="gray" style={{ flex: 1 }} onClick={() => setIsDeleteModalOpen(false)}>
+              <Button variant="soft" color="gray" className={styles.deleteActionButton} onClick={() => setIsDeleteModalOpen(false)}>
                 Cancel
               </Button>
-              <Button color="red" style={{ flex: 1 }} onClick={confirmDelete}>
+              <Button color="red" className={styles.deleteActionButton} onClick={confirmDelete}>
                 Delete
               </Button>
             </Flex>

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { act } from '@testing-library/react';
 
 vi.mock('@tauri-apps/api/core');
@@ -6,7 +6,6 @@ vi.mock('@tauri-apps/api/core');
 import { invoke } from '@tauri-apps/api/core';
 import { renderHookWithProviders } from '@/testUtils';
 import { useFolderManager } from './useFolderManager';
-import { MAX_FOLDERS } from '@/constants/folders';
 import type { Folder } from '@/types';
 
 const mockInvoke = vi.mocked(invoke);
@@ -21,44 +20,35 @@ const makeFolder = (id: string, name = `Folder ${id}`): Folder => ({
 
 describe('useFolderManager', () => {
   describe('handleAddFolder', () => {
-    it('opens create modal when under the limit', () => {
+    beforeEach(() => {
+      mockInvoke.mockImplementation((cmd: string) => {
+        if (cmd === 'check_limit_status') {
+          return Promise.resolve({ passwords_at_limit: false, folders_at_limit: false });
+        }
+        return Promise.resolve(undefined);
+      });
+    });
+
+    it('opens create modal when under the limit', async () => {
       const { result } = renderHookWithProviders(() => useFolderManager());
-      act(() => result.current.handleAddFolder());
+      await act(async () => result.current.handleAddFolder());
       expect(result.current.isCreateFolderOpen).toBe(true);
     });
 
-    it('shows limit alert when at MAX_FOLDERS', async () => {
-      vi.useFakeTimers();
-      renderHookWithProviders(() => useFolderManager());
-      const fullList = Array.from({ length: MAX_FOLDERS }, (_, i) => makeFolder(`f${i}`));
-      mockInvoke.mockResolvedValueOnce(fullList.map(f => ({ ...f, createdAt: f.createdAt.toISOString() })));
-      await act(async () => { /* load initial data is not called here; set folders directly via atom */ });
-      // Simulate folders being at capacity via the atom store
-      const { store } = renderHookWithProviders(() => useFolderManager());
-      const { foldersAtom } = await import('@/store/atoms');
-      store.set(foldersAtom, fullList);
-      const { result: r2 } = renderHookWithProviders(() => useFolderManager(), { store });
-      act(() => r2.current.handleAddFolder());
-      expect(r2.current.folderLimitAlert).toContain(`${MAX_FOLDERS}`);
-      expect(r2.current.isCreateFolderOpen).toBe(false);
-      vi.useRealTimers();
+    it('opens upgrade modal when folders_at_limit is true (free user)', async () => {
+      mockInvoke.mockImplementation((cmd: string) => {
+        if (cmd === 'check_limit_status') {
+          return Promise.resolve({ passwords_at_limit: false, folders_at_limit: true });
+        }
+        return Promise.resolve(undefined);
+      });
+      const { result, store } = renderHookWithProviders(() => useFolderManager());
+      const { activeModalAtom } = await import('@/store/atoms');
+      await act(async () => result.current.handleAddFolder());
+      expect(store.get(activeModalAtom)).toBe('upgrade');
+      expect(result.current.isCreateFolderOpen).toBe(false);
     });
-  });
 
-  describe('folderLimitAlert', () => {
-    it('auto-clears after 2 seconds', async () => {
-      vi.useFakeTimers();
-      const { store } = renderHookWithProviders(() => useFolderManager());
-      const { foldersAtom } = await import('@/store/atoms');
-      const fullList = Array.from({ length: MAX_FOLDERS }, (_, i) => makeFolder(`f${i}`));
-      store.set(foldersAtom, fullList);
-      const { result } = renderHookWithProviders(() => useFolderManager(), { store });
-      act(() => result.current.handleAddFolder());
-      expect(result.current.folderLimitAlert).not.toBe('');
-      act(() => vi.advanceTimersByTime(2000));
-      expect(result.current.folderLimitAlert).toBe('');
-      vi.useRealTimers();
-    });
   });
 
   describe('handleDeleteFolder', () => {

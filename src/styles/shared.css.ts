@@ -25,3 +25,11 @@ export const upgradeBannerCta = style({
   cursor: 'pointer',
   whiteSpace: 'nowrap',
 });
+
+export const fieldLabel = style({
+  fontSize: '13px',
+});
+
+export const fullWidth = style({
+  width: '100%',
+});

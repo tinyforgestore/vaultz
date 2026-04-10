@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { Dialog, Flex, TextField, Button, Text, IconButton } from '@radix-ui/themes';
+import * as styles from './index.css';
+import { fieldLabel } from '@/styles/shared.css';
 
 interface ExportVaultModalProps {
   onConfirm: (passphrase: string) => Promise<void>;
@@ -41,7 +43,7 @@ export default function ExportVaultModal({ onConfirm, onCancel }: ExportVaultMod
 
   return (
     <Dialog.Root open={true} onOpenChange={(open) => !open && onCancel()}>
-      <Dialog.Content style={{ maxWidth: 380 }}>
+      <Dialog.Content className={styles.dialogContent}>
         <Dialog.Title size="4">Export Vault</Dialog.Title>
         <Dialog.Description size="2" mb="3" color="gray">
           Your vault will be encrypted with the passphrase you set. Keep it safe — you'll need it to import the vault.
@@ -51,7 +53,7 @@ export default function ExportVaultModal({ onConfirm, onCancel }: ExportVaultMod
           <Flex direction="column" gap="2">
             <label>
               <Flex direction="column" gap="1">
-                <span style={{ fontSize: '13px' }}>Export Passphrase *</span>
+                <span className={fieldLabel}>Export Passphrase *</span>
                 <TextField.Root
                   size="1"
                   type={showPassphrase ? 'text' : 'password'}
@@ -70,7 +72,7 @@ export default function ExportVaultModal({ onConfirm, onCancel }: ExportVaultMod
 
             <label>
               <Flex direction="column" gap="1">
-                <span style={{ fontSize: '13px' }}>Confirm Passphrase *</span>
+                <span className={fieldLabel}>Confirm Passphrase *</span>
                 <TextField.Root
                   size="1"
                   type={showPassphrase ? 'text' : 'password'}

@@ -81,3 +81,8 @@ export const copyButtonCopied = style({
 export const starButton = style({
   color: starAmber,
 });
+
+export const cardBody = style({
+  flex: 1,
+  minWidth: 0,
+});

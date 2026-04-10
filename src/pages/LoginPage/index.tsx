@@ -1,4 +1,5 @@
 import { Eye, EyeOff, ShieldCheck } from 'lucide-react';
+import clsx from 'clsx';
 import vaultLogo from '@/assets/vault-logo.png';
 import { Flex, Dialog, Text } from '@radix-ui/themes';
 import { CreateMasterPasswordModal } from '@/components/modals/CreateMasterPasswordModal';
@@ -81,7 +82,7 @@ export default function LoginPage() {
         />
 
         <Dialog.Root open={showLoadingModal}>
-          <Dialog.Content style={{ maxWidth: 380 }}>
+          <Dialog.Content className={styles.dialogContent}>
             <Dialog.Title>Setting Up Your Vault</Dialog.Title>
             <Dialog.Description size="2" mb="4">
               Creating encrypted database and default folders...
@@ -107,7 +108,7 @@ export default function LoginPage() {
   return (
     <div className={styles.container}>
       <div className={styles.dragRegion} data-tauri-drag-region />
-      <div className={`${styles.card}${shaking ? ` ${styles.cardShaking}` : ''}`}>
+      <div className={clsx(styles.card, shaking && styles.cardShaking)}>
         <div className={styles.lockIconBox}>
           <img src={vaultLogo} alt="Vault" className={styles.lockIcon} />
         </div>

@@ -1,6 +1,7 @@
 import { RefreshCw } from 'lucide-react';
 import { Dialog, Flex, TextField, Button, Checkbox, Slider } from '@radix-ui/themes';
 import { usePasswordGenerator } from '@/hooks/usePasswordGenerator';
+import * as styles from './index.css';
 
 interface GeneratePasswordModalProps {
   onUsePassword: (password: string) => void;
@@ -102,7 +103,7 @@ export default function GeneratePasswordModal({ onUsePassword, onCancel, isEmbed
 
   return (
     <Dialog.Root open={true} onOpenChange={(open) => !open && onCancel()}>
-      <Dialog.Content style={{ maxWidth: 450 }}>
+      <Dialog.Content className={styles.dialogContent}>
         <Dialog.Title>Generate Password</Dialog.Title>
         {generatorContent}
       </Dialog.Content>

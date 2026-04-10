@@ -1,9 +1,9 @@
-import { Search, Settings, Plus, LogOut, CheckSquare, Trash2, Heart, HeartOff, Layers, Copy, Crown } from 'lucide-react';
+import { Search, Settings, Plus, LogOut, CheckSquare, Trash2, Heart, HeartOff, Copy, Crown } from 'lucide-react';
+import clsx from 'clsx';
+import vaultzLogo from '@/assets/vault-logo.png';
 import { Flex, TextField, Box, IconButton, Dialog, Text, Button } from '@radix-ui/themes';
 import DeletePasswordModal from '@/components/modals/DeletePasswordModal';
 import CreateFolderModal from '@/components/modals/CreateFolderModal';
-import UpgradeModal, { GUMROAD_PRODUCT_URL } from '@/components/modals/UpgradeModal';
-import { openUrl } from '@tauri-apps/plugin-opener';
 import { useDashboard } from '@/hooks/useDashboard';
 import { FOLDER_ICON_MAP } from '@/constants/folders';
 import CreatePasswordModal from '@/components/modals/CreatePasswordModal';
@@ -22,7 +22,6 @@ export default function Dashboard() {
     isCreatePasswordOpen,
     isLogoutConfirmOpen,
     isCreateFolderOpen,
-    upgradeLimitType,
     isSelectionMode,
     isBulkDeleteOpen,
     selectedIds,
@@ -31,13 +30,14 @@ export default function Dashboard() {
     clipboardToast,
     showFolderTag,
     visibleFolders,
-    licenseStatus,
+    isPro,
     setSelectedFolder,
     setSearchQuery,
     setIsCreatePasswordOpen,
     setIsLogoutConfirmOpen,
     setIsCreateFolderOpen,
-    setUpgradeLimitType,
+    setActiveModal,
+    setPendingLicenseKey,
     setIsBulkDeleteOpen,
     handlePasswordClick,
     handleSettingsClick,
@@ -46,6 +46,7 @@ export default function Dashboard() {
     toggleFavorite,
     handleCopyPassword,
     handleCreatePassword,
+    handleAddFolder,
     confirmCreatePassword,
     confirmCreateFolder,
     toggleSelectionMode,
@@ -65,7 +66,7 @@ export default function Dashboard() {
             <div className={styles.brandRow} data-tauri-drag-region>
               <Flex align="center" gap="2">
                 <div className={styles.brandLogo}>
-                  <Layers size={14} style={{ color: 'var(--accent-11)' }} />
+                  <img src={vaultzLogo} width={32} height={32} alt="Vaultz" />
                 </div>
                 <span className={styles.brandName}>Vault</span>
               </Flex>
@@ -94,12 +95,18 @@ export default function Dashboard() {
               </TextField.Slot>
             </TextField.Root>
 
-            {!licenseStatus?.is_active && (
+            {!isPro && (
               <div className={styles.upgradeBanner}>
                 <Crown size={12} color="var(--amber-9)" />
                 <span className={styles.upgradeBannerText}>Upgrade to Pro — Unlimited entries &amp; folders</span>
-                <button className={styles.upgradeBannerCta} onClick={() => openUrl(GUMROAD_PRODUCT_URL)}>
-                  Learn More →
+                <button
+                  className={styles.upgradeBannerCta}
+                  onClick={() => {
+                    setPendingLicenseKey(null);
+                    setActiveModal('upgrade');
+                  }}
+                >
+                  Upgrade to Pro
                 </button>
               </div>
             )}
@@ -110,7 +117,7 @@ export default function Dashboard() {
                 return (
                   <button
                     key={folder.id}
-                    className={`${styles.tab}${selectedFolder === folder.id ? ` ${styles.tabActive}` : ''}`}
+                    className={clsx(styles.tab, selectedFolder === folder.id && styles.tabActive)}
                     onClick={() => setSelectedFolder(folder.id)}
                   >
                     <Icon size={12} />
@@ -119,7 +126,7 @@ export default function Dashboard() {
                   </button>
                 );
               })}
-              <button onClick={() => setIsCreateFolderOpen(true)} className={styles.newFolderButton}>
+              <button onClick={handleAddFolder} className={styles.newFolderButton}>
                 <Plus size={12} />
                 New Folder
               </button>
@@ -200,7 +207,7 @@ export default function Dashboard() {
       )}
 
       <Dialog.Root open={isLogoutConfirmOpen} onOpenChange={(open) => !open && setIsLogoutConfirmOpen(false)}>
-        <Dialog.Content style={{ maxWidth: 380 }}>
+        <Dialog.Content className={styles.logoutDialogContent}>
           <Dialog.Title>Logout</Dialog.Title>
           <Text>Are you sure you want to logout?</Text>
           <Flex gap="2" mt="4" justify="end">
@@ -221,23 +228,17 @@ export default function Dashboard() {
       )}
 
       {favoriteAlert && (
-        <Box className={styles.toastContainer} style={{ bottom: 20 }}>
+        <Box className={clsx(styles.toastContainer, styles.toastDefault)}>
           <Toast message={favoriteAlert} variant="warning" />
         </Box>
       )}
 
       {clipboardToast && (
-        <Box className={styles.toastContainer} style={{ bottom: favoriteAlert ? 60 : 20 }}>
+        <Box className={clsx(styles.toastContainer, favoriteAlert ? styles.toastElevated : styles.toastDefault)}>
           <Toast message={clipboardToast} icon={<Copy size={14} />} />
         </Box>
       )}
 
-      {upgradeLimitType && (
-        <UpgradeModal
-          limitType={upgradeLimitType}
-          onClose={() => setUpgradeLimitType(null)}
-        />
-      )}
     </>
   );
 }

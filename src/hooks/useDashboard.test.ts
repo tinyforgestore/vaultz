@@ -45,6 +45,7 @@ function setup() {
   mockInvoke.mockImplementation((cmd: unknown) => {
     if (cmd === 'get_folders') return Promise.resolve([]);
     if (cmd === 'get_passwords') return Promise.resolve([]);
+    if (cmd === 'check_limit_status') return Promise.resolve({ passwords_at_limit: false, folders_at_limit: false });
     return Promise.resolve(undefined);
   });
   return renderHookWithProviders(() => useDashboard());
@@ -139,9 +140,9 @@ describe('useDashboard', () => {
   });
 
   describe('password creation', () => {
-    it('handleCreatePassword opens the modal', () => {
+    it('handleCreatePassword opens the modal', async () => {
       const { result } = setup();
-      act(() => result.current.handleCreatePassword());
+      await act(async () => result.current.handleCreatePassword());
       expect(result.current.isCreatePasswordOpen).toBe(true);
     });
 

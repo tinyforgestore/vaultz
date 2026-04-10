@@ -38,7 +38,6 @@ pub async fn activate_license(key: String, db_state: State<'_, DbState>) -> Resu
         ("license_key", key.as_str()),
         ("increment_uses_count", "true"),
     ];
-    eprintln!("[license] posting to {} with product_id={}", GUMROAD_VERIFY_URL, PRODUCT_ID);
 
     let resp = client
         .post(GUMROAD_VERIFY_URL)
@@ -50,16 +49,7 @@ pub async fn activate_license(key: String, db_state: State<'_, DbState>) -> Resu
             e.to_string()
         })?;
 
-    let status = resp.status();
-    eprintln!("[license] HTTP response status: {}", status);
-
-    let raw = resp.text().await.map_err(|e| {
-        eprintln!("[license] failed to read response body: {}", e);
-        e.to_string()
-    })?;
-    eprintln!("[license] response body: {}", raw);
-
-    let body: GumroadVerifyResponse = serde_json::from_str(&raw).map_err(|e| {
+    let body: GumroadVerifyResponse = resp.json().await.map_err(|e| {
         eprintln!("[license] failed to parse response JSON: {}", e);
         e.to_string()
     })?;
@@ -139,23 +129,47 @@ pub async fn validate_license(db_state: State<'_, DbState>) -> Result<bool, Stri
                 Ok(false)
             }
         }
-        // Network unreachable — honour the existing local state without evicting.
-        Err(_) => Ok(false),
+        // Network unreachable — treat as valid so a transient outage doesn't
+        // evict a legitimately activated license. The DB timestamp is not updated,
+        // so the next online re-validation will still contact Gumroad.
+        Err(e) => {
+            eprintln!("[license] validate_license network error: {}", e);
+            Ok(true)
+        }
     }
 }
 
 #[tauri::command]
 pub fn get_license_status(db_state: State<'_, DbState>) -> Result<LicenseStatus, String> {
-    const SEVEN_DAYS_SECS: i64 = 7 * 24 * 60 * 60;
-
     with_db(&db_state, |db| {
-        let is_active = match db.get_license().map_err(|e| e.to_string())? {
-            None | Some((_, None)) => false,
-            Some((_, Some(validated_at))) => {
-                Database::now_unix() - validated_at <= SEVEN_DAYS_SECS
-            }
-        };
+        Ok(LicenseStatus {
+            is_active: db.is_license_active(),
+        })
+    })
+}
 
-        Ok(LicenseStatus { is_active })
+#[derive(Serialize)]
+pub struct LimitStatus {
+    pub passwords_at_limit: bool,
+    pub folders_at_limit: bool,
+}
+
+#[tauri::command]
+pub fn check_limit_status(db_state: State<'_, DbState>) -> Result<LimitStatus, String> {
+    with_db(&db_state, |db| {
+        if db.is_license_active() {
+            return Ok(LimitStatus {
+                passwords_at_limit: false,
+                folders_at_limit: false,
+            });
+        }
+
+        let password_count = db.count_passwords().map_err(|e| e.to_string())?;
+        let folder_count = db.count_folders().map_err(|e| e.to_string())?;
+
+        Ok(LimitStatus {
+            passwords_at_limit: password_count >= FREE_PASSWORD_LIMIT,
+            folders_at_limit: folder_count >= FREE_FOLDER_LIMIT,
+        })
     })
 }

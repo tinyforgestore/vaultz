@@ -1,5 +1,6 @@
 import { Check, AlertTriangle, Info, type LucideIcon } from 'lucide-react';
 import { ReactNode } from 'react';
+import * as styles from './index.css';
 
 type ToastVariant = 'default' | 'success' | 'warning' | 'error';
 
@@ -28,21 +29,8 @@ export function Toast({ message, variant = 'default', icon }: ToastProps) {
   const iconColor = ICON_COLORS[variant];
 
   return (
-    <div style={{
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: '8px',
-      background: 'var(--gray-12)',
-      color: 'var(--gray-1)',
-      padding: '8px 14px',
-      borderRadius: '8px',
-      fontSize: '13px',
-      fontWeight: '500',
-      boxShadow: '0 4px 20px rgba(0,0,0,0.35)',
-      whiteSpace: 'nowrap',
-      userSelect: 'none',
-    }}>
-      <span style={{ color: iconColor, display: 'flex', alignItems: 'center' }}>
+    <div className={styles.toastWrapper}>
+      <span className={styles.iconSlot} style={{ color: iconColor }}>
         {icon ?? <DefaultIcon size={14} />}
       </span>
       {message}

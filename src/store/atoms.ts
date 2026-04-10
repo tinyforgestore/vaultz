@@ -7,13 +7,20 @@ import { SPECIAL_FOLDERS } from '@/constants/folders';
 
 // Base atoms
 export const licenseStatusAtom = atom<LicenseStatus | null>(null);
+
+// Modal state atoms
+export type ActiveModal = 'upgrade' | 'activate' | 'proWelcome' | null;
+export const activeModalAtom = atom<ActiveModal>(null);
+export const pendingLicenseKeyAtom = atom<string | null>(null);
 export const foldersAtom = atom<Folder[]>([]);
 export const allPasswordsAtom = atom<Password[]>([]);
 export const selectedFolderAtom = atom<string>(SPECIAL_FOLDERS.ALL.toString());
 export const searchQueryAtom = atom<string>('');
 export const isAuthenticatedAtom = atomWithStorage<boolean>('isAuthenticated', false);
 
-// Derived atom for filtered passwords
+// Derived atoms
+export const isProAtom = atom((get) => get(licenseStatusAtom)?.is_active === true);
+
 export const filteredPasswordsAtom = atom((get) => {
   const allPasswords = get(allPasswordsAtom);
   const selectedFolder = get(selectedFolderAtom);
@@ -217,9 +224,12 @@ export const loginAtom = atom(
 
 export const logoutAtom = atom(null, (get, set) => {
   set(isAuthenticatedAtom, false);
+  set(licenseStatusAtom, null);
   set(allPasswordsAtom, []);
   set(selectedFolderAtom, SPECIAL_FOLDERS.ALL.toString());
   set(searchQueryAtom, '');
+  set(activeModalAtom, null);
+  set(pendingLicenseKeyAtom, null);
 });
 
 export const changeMasterPasswordAtom = atom(

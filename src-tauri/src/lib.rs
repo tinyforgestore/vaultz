@@ -15,9 +15,17 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_single_instance::init(|_app, _args, _cwd| {}))
+        .plugin(tauri_plugin_deep_link::init())
         .manage(Mutex::new(SessionState::default()))
         .manage(Mutex::<Option<Database>>::new(None))
         .setup(|app| {
+            #[cfg(any(target_os = "linux", all(debug_assertions, windows)))]
+            {
+                use tauri_plugin_deep_link::DeepLinkExt;
+                app.deep_link().register_all()?;
+            }
+
             let app_data_dir = app
                 .path()
                 .app_data_dir()
@@ -59,6 +67,7 @@ pub fn run() {
             commands::license::activate_license,
             commands::license::validate_license,
             commands::license::get_license_status,
+            commands::license::check_limit_status,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

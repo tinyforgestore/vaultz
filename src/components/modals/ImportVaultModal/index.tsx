@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Dialog, Flex, TextField, Button, Text, Callout } from '@radix-ui/themes';
 import { AlertTriangle } from 'lucide-react';
+import * as styles from './index.css';
+import { fieldLabel } from '@/styles/shared.css';
 
 interface ImportVaultModalProps {
   filePath: string;
@@ -34,7 +36,7 @@ export default function ImportVaultModal({ filePath, isReplacing, onConfirm, onC
 
   return (
     <Dialog.Root open={true} onOpenChange={(open) => !open && onCancel()}>
-      <Dialog.Content style={{ maxWidth: 380 }}>
+      <Dialog.Content className={styles.dialogContent}>
         <Dialog.Title size="4">Import Vault</Dialog.Title>
         <Dialog.Description size="2" mb="3" color="gray">
           {fileName}
@@ -51,7 +53,7 @@ export default function ImportVaultModal({ filePath, isReplacing, onConfirm, onC
           <Flex direction="column" gap="2">
             <label>
               <Flex direction="column" gap="1">
-                <span style={{ fontSize: '13px' }}>Vault Passphrase *</span>
+                <span className={fieldLabel}>Vault Passphrase *</span>
                 <TextField.Root
                   size="1"
                   type="password"

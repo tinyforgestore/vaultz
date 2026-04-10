@@ -2,7 +2,6 @@ import { Trash2, Pencil, Lock, Folder, ArrowLeft, Download, ShieldOff, Search, C
 import { version, homepage } from '../../../package.json';
 import tinyForgeLogo from '@/assets/tinyforge-logo.svg';
 import { Flex, Card, Button, Heading, Box, IconButton, TextField, Text } from '@radix-ui/themes';
-import { Toast } from '@/components/Toast';
 import ChangeMasterPasswordModal from '@/components/modals/ChangeMasterPasswordModal';
 import ExportVaultModal from '@/components/modals/ExportVaultModal';
 import CreateFolderModal from '@/components/modals/CreateFolderModal';
@@ -19,14 +18,9 @@ export default function SettingsPage() {
     isDestroyVaultOpen,
     isCreateFolderOpen,
     isDeleteFolderOpen,
-    licenseStatus,
-    licenseKeyInput,
-    licenseActivating,
-    licenseError,
-    showProWelcome,
+    isPro,
     selectedFolder,
     editingFolder,
-    folderLimitAlert,
     folderFilter,
     filteredFolders,
     deleteFolderName,
@@ -35,10 +29,8 @@ export default function SettingsPage() {
     setIsDestroyVaultOpen,
     setIsCreateFolderOpen,
     setIsDeleteFolderOpen,
-    setLicenseKeyInput,
     setSelectedFolder,
     setFolderFilter,
-    setShowProWelcome,
     handleBack,
     handleChangeMasterPassword,
     handleExportVault,
@@ -47,13 +39,13 @@ export default function SettingsPage() {
     handleEditFolder,
     handleCancelEdit,
     handleDeleteFolder,
-    activateLicense,
     confirmChangeMasterPassword,
     confirmExportVault,
     confirmDestroyVault,
     confirmCreateFolder,
     confirmEditFolder,
     confirmDeleteFolder,
+    setActiveModal,
   } = useSettings();
 
   return (
@@ -68,33 +60,15 @@ export default function SettingsPage() {
       <div className={styles.contentArea}>
         <Flex direction="column" gap="3">
           {/* License (free only) — first card */}
-          {!licenseStatus?.is_active && (
-            <Card size="1" className={styles.licenseCard}>
-              <Flex direction="column" gap="3">
-                <Flex align="center" gap="2">
-                  <div className={styles.licenseIconWrap}>
-                    <Crown size={16} color="var(--amber-9)" />
-                  </div>
-                  <Heading size="3">Activate Pro License</Heading>
-                </Flex>
-                <Text size="2" color="gray">Enter your license key to unlock unlimited entries and folders.</Text>
-                <Flex gap="2">
-                  <TextField.Root
-                    size="2"
-                    placeholder="XXXX-XXXX-XXXX-XXXX"
-                    value={licenseKeyInput}
-                    onChange={(e) => setLicenseKeyInput(e.target.value)}
-                    className={styles.licenseInput}
-                  />
-                  <Button
-                    size="2"
-                    disabled={licenseActivating || licenseKeyInput.trim() === ''}
-                    onClick={() => activateLicense(licenseKeyInput.trim())}
-                  >
-                    {licenseActivating ? 'Activating…' : 'Activate'}
-                  </Button>
-                </Flex>
-                {licenseError && <Text size="1" color="red">{licenseError}</Text>}
+          {!isPro && (
+            <Card size="1" className={styles.upgradeCard}>
+              <Flex direction="column" gap="2">
+                <Heading size="2">
+                  <Flex as="span" align="center" gap="1"><Crown size={14} color="var(--amber-9)" /> Upgrade to Pro</Flex>
+                </Heading>
+                <Button size="1" variant="soft" color="amber" onClick={() => setActiveModal('activate')}>
+                  Activate Pro License
+                </Button>
               </Flex>
             </Card>
           )}
@@ -212,7 +186,7 @@ export default function SettingsPage() {
 
           {/* About section */}
           <Flex direction="column" align="center" gap="2" mt="5">
-            {licenseStatus?.is_active ? (
+            {isPro ? (
               <span className={styles.membershipPlanPro}>
                 <Crown size={12} color="var(--amber-9)" /> Pro Member
               </span>
@@ -271,26 +245,6 @@ export default function SettingsPage() {
         />
       )}
 
-      {folderLimitAlert && (
-        <Box className={styles.toastContainer}>
-          <Toast message={folderLimitAlert} variant="warning" />
-        </Box>
-      )}
-
-      {showProWelcome && (
-        <div className={styles.proWelcomeOverlay} onClick={() => setShowProWelcome(false)}>
-          <div className={styles.proWelcomeContent} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.proWelcomeIconWrap}>
-              <Crown size={44} color="white" />
-            </div>
-            <h2 className={styles.proWelcomeTitle}>Welcome to Pro!</h2>
-            <p className={styles.proWelcomeSubtitle}>You now have unlimited entries and folders. Enjoy the full Vaultz experience!</p>
-            <button className={styles.proWelcomeDismiss} onClick={() => setShowProWelcome(false)}>
-              Got it
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

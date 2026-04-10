@@ -1,6 +1,8 @@
 import { RefreshCw } from 'lucide-react';
 import { Dialog, Flex, TextField, Button, Checkbox, Slider, Box } from '@radix-ui/themes';
 import { usePasswordGenerator } from '@/hooks/usePasswordGenerator';
+import * as styles from './index.css';
+import { fieldLabel } from '@/styles/shared.css';
 
 interface PasswordGeneratorProps {
   onUsePassword: (password: string) => void;
@@ -35,7 +37,7 @@ export default function PasswordGenerator({ onUsePassword, onCancel, isEmbedded 
 
           <Box>
             <Flex direction="column" gap="1">
-              <span style={{ fontSize: '13px' }}>Length: {length[0]}</span>
+              <span className={fieldLabel}>Length: {length[0]}</span>
               <Slider
                 min={8}
                 max={32}
@@ -53,7 +55,7 @@ export default function PasswordGenerator({ onUsePassword, onCancel, isEmbedded 
                   checked={includeUppercase}
                   onCheckedChange={(checked) => setIncludeUppercase(checked === true)}
                 />
-                <span style={{ fontSize: '14px' }}>Uppercase (A-Z)</span>
+                <span className={styles.optionLabel}>Uppercase (A-Z)</span>
               </Flex>
             </label>
 
@@ -64,7 +66,7 @@ export default function PasswordGenerator({ onUsePassword, onCancel, isEmbedded 
                   checked={includeLowercase}
                   onCheckedChange={(checked) => setIncludeLowercase(checked === true)}
                 />
-                <span style={{ fontSize: '14px' }}>Lowercase (a-z)</span>
+                <span className={styles.optionLabel}>Lowercase (a-z)</span>
               </Flex>
             </label>
 
@@ -75,7 +77,7 @@ export default function PasswordGenerator({ onUsePassword, onCancel, isEmbedded 
                   checked={includeNumbers}
                   onCheckedChange={(checked) => setIncludeNumbers(checked === true)}
                 />
-                <span style={{ fontSize: '14px' }}>Numbers (0-9)</span>
+                <span className={styles.optionLabel}>Numbers (0-9)</span>
               </Flex>
             </label>
 
@@ -86,7 +88,7 @@ export default function PasswordGenerator({ onUsePassword, onCancel, isEmbedded 
                   checked={includeSymbols}
                   onCheckedChange={(checked) => setIncludeSymbols(checked === true)}
                 />
-                <span style={{ fontSize: '14px' }}>Symbols (!@#$%^&*)</span>
+                <span className={styles.optionLabel}>Symbols (!@#$%^&*)</span>
               </Flex>
             </label>
           </Flex>
@@ -108,7 +110,7 @@ export default function PasswordGenerator({ onUsePassword, onCancel, isEmbedded 
 
   return (
     <Dialog.Root open={true} onOpenChange={(open) => !open && onCancel()}>
-      <Dialog.Content style={{ maxWidth: 450 }}>
+      <Dialog.Content className={styles.dialogContent}>
         <Dialog.Title>Generate Password</Dialog.Title>
         {generatorContent}
       </Dialog.Content>

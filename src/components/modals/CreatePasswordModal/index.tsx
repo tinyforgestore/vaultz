@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Dialog, Flex, TextField, Button, TextArea, Select, Box, IconButton } from '@radix-ui/themes';
 import { KeyRound, Eye, EyeOff, Plus } from 'lucide-react';
-import { useAtomValue } from 'jotai';
-import { foldersAtom } from '@/store/atoms';
+import { useAtomValue, useSetAtom } from 'jotai';
+import { foldersAtom, activeModalAtom } from '@/store/atoms';
+import { useLimitCheck } from '@/hooks/useLimitCheck';
+import { LIMIT_REACHED_FOLDERS } from '@/constants/folders';
 import PasswordGenerator from '@/components/PasswordGenerator';
 import CreateFolderModal from '@/components/modals/CreateFolderModal';
 import { useCreatePassword } from '@/hooks/useCreatePassword';
@@ -38,14 +40,16 @@ export default function CreatePasswordModal({ onConfirm, onCancel, initialPasswo
   } = useCreatePassword({ onConfirm, initialPassword, initialData });
 
   const folders = useAtomValue(foldersAtom);
+  const setActiveModal = useSetAtom(activeModalAtom);
+  const { checkAndOpen } = useLimitCheck();
   const [showPassword, setShowPassword] = useState(false);
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
 
   return (
     <Dialog.Root open={true} onOpenChange={(open) => !open && onCancel()}>
-      <Dialog.Content style={{ maxWidth: 380, maxHeight: '85vh', overflow: 'auto' }}>
+      <Dialog.Content className={styles.dialogContent}>
         <Dialog.Title size="4">{initialData ? 'Edit Password' : 'Create New Password'}</Dialog.Title>
-        
+
         <form onSubmit={handleSubmit}>
           <Flex direction="column" gap="2">
             <label>
@@ -82,7 +86,7 @@ export default function CreatePasswordModal({ onConfirm, onCancel, initialPasswo
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    style={{ flex: 1 }}
+                    className={styles.passwordInput}
                   >
                     <TextField.Slot side="right">
                       <IconButton size="1" variant="ghost" type="button" tabIndex={-1} onClick={() => setShowPassword(s => !s)}>
@@ -99,7 +103,7 @@ export default function CreatePasswordModal({ onConfirm, onCancel, initialPasswo
             </label>
 
             {showGenerator && (
-              <Box style={{ border: '1px solid var(--blue-6)', borderRadius: '8px', padding: '12px', backgroundColor: 'var(--blue-2)' }}>
+              <Box className={styles.generatorBox}>
                 <PasswordGenerator
                   onUsePassword={handleUseGeneratedPassword}
                   onCancel={() => setShowGenerator(false)}
@@ -132,7 +136,7 @@ export default function CreatePasswordModal({ onConfirm, onCancel, initialPasswo
                       ))}
                     </Select.Content>
                   </Select.Root>
-                  <Button size="1" type="button" variant="soft" color="gray" onClick={() => setIsCreateFolderOpen(true)}>
+                  <Button size="1" type="button" variant="soft" color="gray" onClick={() => checkAndOpen('folder', () => setIsCreateFolderOpen(true), () => onCancel())}>
                     <Plus size={14} />
                     New
                   </Button>
@@ -164,9 +168,16 @@ export default function CreatePasswordModal({ onConfirm, onCancel, initialPasswo
         {isCreateFolderOpen && (
           <CreateFolderModal
             onConfirm={(folderData) => {
-              confirmCreateFolder(folderData).then(() => {
-                setIsCreateFolderOpen(false);
-              });
+              confirmCreateFolder(folderData)
+                .then(() => setIsCreateFolderOpen(false))
+                .catch((err: unknown) => {
+                  const msg = err instanceof Error ? err.message : String(err);
+                  if (msg.includes(LIMIT_REACHED_FOLDERS)) {
+                    setIsCreateFolderOpen(false);
+                    onCancel();
+                    setActiveModal('upgrade');
+                  }
+                });
             }}
             onCancel={() => setIsCreateFolderOpen(false)}
           />

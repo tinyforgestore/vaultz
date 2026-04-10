@@ -1,5 +1,7 @@
 import { AlertTriangle } from 'lucide-react';
 import { Dialog, Flex, Button, Text } from '@radix-ui/themes';
+import * as styles from './index.css';
+import { fullWidth } from '@/styles/shared.css';
 
 interface DestroyVaultModalProps {
   onConfirm: () => void;
@@ -9,7 +11,7 @@ interface DestroyVaultModalProps {
 export default function DestroyVaultModal({ onConfirm, onCancel }: DestroyVaultModalProps) {
   return (
     <Dialog.Root open={true} onOpenChange={(open) => !open && onCancel()}>
-      <Dialog.Content style={{ maxWidth: 400 }}>
+      <Dialog.Content className={styles.dialogContent}>
         <Flex direction="column" gap="3" align="center">
           <AlertTriangle size={48} color="var(--red-9)" />
 
@@ -19,7 +21,7 @@ export default function DestroyVaultModal({ onConfirm, onCancel }: DestroyVaultM
             This will permanently delete the database and all stored passwords from this device. This action cannot be undone.
           </Text>
 
-          <Flex gap="3" mt="2" justify="end" style={{ width: '100%' }}>
+          <Flex gap="3" mt="2" justify="end" className={fullWidth}>
             <Dialog.Close>
               <Button variant="soft" color="gray" onClick={onCancel}>Cancel</Button>
             </Dialog.Close>
