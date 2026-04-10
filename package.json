@@ -1,7 +1,7 @@
 {
   "name": "vaultz",
   "private": true,
-  "version": "1.0.4",
+  "version": "1.0.5",
   "homepage": "https://tinyforge.store",
   "type": "module",
   "scripts": {
