@@ -2,6 +2,7 @@ use rusqlite::{Connection, Result as SqlResult};
 use std::path::PathBuf;
 
 mod folders;
+mod license;
 mod master;
 mod passwords;
 pub mod models;
@@ -41,6 +42,12 @@ CREATE TABLE IF NOT EXISTS passwords (
     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%S.000Z', 'now')),
     updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%S.000Z', 'now')),
     FOREIGN KEY (folder_id) REFERENCES folders(id)
+);
+
+CREATE TABLE IF NOT EXISTS license (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    license_key TEXT NOT NULL,
+    license_validated_at INTEGER
 );
 ";
 
@@ -95,7 +102,33 @@ impl Database {
             )?;
         }
 
+        let has_license_table: bool = self
+            .conn
+            .prepare("SELECT id FROM license LIMIT 0")
+            .is_ok();
+        if !has_license_table {
+            self.conn.execute_batch(
+                "CREATE TABLE IF NOT EXISTS license (
+                    id INTEGER PRIMARY KEY CHECK (id = 1),
+                    license_key TEXT NOT NULL,
+                    license_validated_at INTEGER
+                );",
+            )?;
+        }
+
         Ok(())
+    }
+
+    /// Returns the total number of stored passwords.
+    pub fn count_passwords(&self) -> SqlResult<i64> {
+        self.conn
+            .query_row("SELECT COUNT(*) FROM passwords", [], |row| row.get(0))
+    }
+
+    /// Returns the total number of folders.
+    pub fn count_folders(&self) -> SqlResult<i64> {
+        self.conn
+            .query_row("SELECT COUNT(*) FROM folders", [], |row| row.get(0))
     }
 
     pub fn export_to_path(&self, path: &str) -> SqlResult<()> {

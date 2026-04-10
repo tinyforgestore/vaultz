@@ -1,4 +1,4 @@
-import { Trash2, Pencil, Lock, Folder, ArrowLeft, Download, ShieldOff, Search } from 'lucide-react';
+import { Trash2, Pencil, Lock, Folder, ArrowLeft, Download, ShieldOff, Search, Zap, Crown } from 'lucide-react';
 import { version, homepage } from '../../../package.json';
 import tinyForgeLogo from '@/assets/tinyforge-logo.svg';
 import { Flex, Card, Button, Heading, Box, IconButton, TextField, Text } from '@radix-ui/themes';
@@ -10,6 +10,8 @@ import EditFolderModal from '@/components/modals/EditFolderModal';
 import DeleteFolderModal from '@/components/modals/DeleteFolderModal';
 import { useSettings } from '@/hooks/useSettings';
 import { FOLDER_ICON_MAP } from '@/constants/folders';
+import { openUrl } from '@tauri-apps/plugin-opener';
+import { GUMROAD_PRODUCT_URL } from '@/components/modals/UpgradeModal';
 import * as styles from './index.css';
 
 export default function SettingsPage() {
@@ -19,6 +21,10 @@ export default function SettingsPage() {
     isDestroyVaultOpen,
     isCreateFolderOpen,
     isDeleteFolderOpen,
+    licenseStatus,
+    licenseKeyInput,
+    licenseActivating,
+    licenseError,
     selectedFolder,
     editingFolder,
     folderLimitAlert,
@@ -30,6 +36,7 @@ export default function SettingsPage() {
     setIsDestroyVaultOpen,
     setIsCreateFolderOpen,
     setIsDeleteFolderOpen,
+    setLicenseKeyInput,
     setSelectedFolder,
     setFolderFilter,
     handleBack,
@@ -40,6 +47,7 @@ export default function SettingsPage() {
     handleEditFolder,
     handleCancelEdit,
     handleDeleteFolder,
+    activateLicense,
     confirmChangeMasterPassword,
     confirmExportVault,
     confirmDestroyVault,
@@ -88,6 +96,43 @@ export default function SettingsPage() {
               >
                 Export Vault
               </Button>
+            </Flex>
+          </Card>
+
+          <Card size="1">
+            <Flex direction="column" gap="2">
+              <Heading size="2">
+                <Flex as="span" align="center" gap="1"><Zap size={14} /> License</Flex>
+              </Heading>
+              {licenseStatus?.is_active ? (
+                <Flex align="center" gap="2">
+                  <Box className={styles.statusDot} />
+                  <Text size="2" color="green" weight="medium">Pro · Active</Text>
+                </Flex>
+              ) : (
+                <Flex direction="column" gap="2">
+                  <Text size="2" color="gray">Enter your license key to unlock unlimited passwords and folders.</Text>
+                  <Flex gap="2">
+                    <TextField.Root
+                      size="1"
+                      placeholder="License key..."
+                      value={licenseKeyInput}
+                      onChange={(e) => setLicenseKeyInput(e.target.value)}
+                      style={{ flex: 1 }}
+                    />
+                    <Button
+                      size="1"
+                      disabled={licenseActivating || licenseKeyInput.trim() === ''}
+                      onClick={() => activateLicense(licenseKeyInput.trim())}
+                    >
+                      {licenseActivating ? 'Activating…' : 'Activate'}
+                    </Button>
+                  </Flex>
+                  {licenseError && (
+                    <Text size="1" color="red">{licenseError}</Text>
+                  )}
+                </Flex>
+              )}
             </Flex>
           </Card>
 
@@ -166,9 +211,23 @@ export default function SettingsPage() {
             </Flex>
           </Card>
 
-          <Flex direction="column" align="center" gap="1">
+          <Flex direction="column" align="center" gap="1" mt="5">
             <img src={tinyForgeLogo} alt="Tiny Forge" width={48} height={48} />
-            <Box className={styles.aboutText}>Vaultz v{version}</Box>
+
+            {!licenseStatus?.is_active && (
+              <div className={styles.aboutUpgradeBanner}>
+                <Crown size={12} />
+                <span className={styles.aboutUpgradeBannerText}>Upgrade to Pro — Unlimited entries &amp; folders</span>
+                <button className={styles.aboutUpgradeBannerCta} onClick={() => openUrl(GUMROAD_PRODUCT_URL)}>
+                  Learn More →
+                </button>
+              </div>
+            )}
+
+            <Box className={styles.aboutText}>
+              {licenseStatus?.is_active ? 'Pro Plan' : 'Free Plan'} — Vaultz v{version}
+            </Box>
+
             <Box className={styles.aboutText}>
               © {new Date().getFullYear()}{' '}
               <a href={homepage} target="_blank" rel="noopener noreferrer">Tiny Forge</a>

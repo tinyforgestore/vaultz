@@ -1,10 +1,12 @@
 import { atom } from 'jotai';
 import { atomWithStorage } from 'jotai/utils';
 import { Password, Folder, CreatePasswordInput, CreateFolderInput } from '@/types';
+import { LicenseStatus } from '@/types/license';
 import { storageService } from '@/services/storageService';
 import { SPECIAL_FOLDERS } from '@/constants/folders';
 
 // Base atoms
+export const licenseStatusAtom = atom<LicenseStatus | null>(null);
 export const foldersAtom = atom<Folder[]>([]);
 export const allPasswordsAtom = atom<Password[]>([]);
 export const selectedFolderAtom = atom<string>(SPECIAL_FOLDERS.ALL.toString());

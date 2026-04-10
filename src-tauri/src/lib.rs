@@ -56,6 +56,9 @@ pub fn run() {
             commands::vault::export_vault,
             commands::vault::import_vault,
             commands::vault::destroy_vault,
+            commands::license::activate_license,
+            commands::license::validate_license,
+            commands::license::get_license_status,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
