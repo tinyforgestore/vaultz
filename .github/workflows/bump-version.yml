@@ -10,7 +10,7 @@ on:
 
 jobs:
   bump:
-    name: Bump version and push tag
+    name: Bump Version to ${{ github.event.inputs.version }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
