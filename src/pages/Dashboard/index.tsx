@@ -96,7 +96,7 @@ export default function Dashboard() {
 
             {!licenseStatus?.is_active && (
               <div className={styles.upgradeBanner}>
-                <Crown size={12} />
+                <Crown size={12} color="var(--amber-9)" />
                 <span className={styles.upgradeBannerText}>Upgrade to Pro — Unlimited entries &amp; folders</span>
                 <button className={styles.upgradeBannerCta} onClick={() => openUrl(GUMROAD_PRODUCT_URL)}>
                   Learn More →

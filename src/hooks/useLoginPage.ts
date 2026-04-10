@@ -17,12 +17,19 @@ export function useLoginPage() {
   const [showMasterPassword, setShowMasterPassword] = useState(false);
   const [shaking, setShaking] = useState(false);
   const [importSuccess, setImportSuccess] = useState(false);
+  const [vaultCreated, setVaultCreated] = useState(false);
 
   useEffect(() => {
     if (!importSuccess) return;
     const timer = setTimeout(() => setImportSuccess(false), 3000);
     return () => clearTimeout(timer);
   }, [importSuccess]);
+
+  useEffect(() => {
+    if (!vaultCreated) return;
+    const timer = setTimeout(() => setVaultCreated(false), 3000);
+    return () => clearTimeout(timer);
+  }, [vaultCreated]);
 
   useEffect(() => {
     if (!login.error) return;
@@ -49,6 +56,7 @@ export function useLoginPage() {
         setTimeout(() => {
           setShowLoadingModal(false);
           setIsDatabaseExist(true);
+          setVaultCreated(true);
         }, 500);
       });
   };
@@ -86,5 +94,6 @@ export function useLoginPage() {
     handleImportVault,
     confirmImportVault,
     importSuccess,
+    vaultCreated,
   };
 }

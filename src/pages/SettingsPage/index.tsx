@@ -1,4 +1,4 @@
-import { Trash2, Pencil, Lock, Folder, ArrowLeft, Download, ShieldOff, Search, Zap, Crown } from 'lucide-react';
+import { Trash2, Pencil, Lock, Folder, ArrowLeft, Download, ShieldOff, Search, Crown } from 'lucide-react';
 import { version, homepage } from '../../../package.json';
 import tinyForgeLogo from '@/assets/tinyforge-logo.svg';
 import { Flex, Card, Button, Heading, Box, IconButton, TextField, Text } from '@radix-ui/themes';
@@ -10,8 +10,6 @@ import EditFolderModal from '@/components/modals/EditFolderModal';
 import DeleteFolderModal from '@/components/modals/DeleteFolderModal';
 import { useSettings } from '@/hooks/useSettings';
 import { FOLDER_ICON_MAP } from '@/constants/folders';
-import { openUrl } from '@tauri-apps/plugin-opener';
-import { GUMROAD_PRODUCT_URL } from '@/components/modals/UpgradeModal';
 import * as styles from './index.css';
 
 export default function SettingsPage() {
@@ -25,6 +23,7 @@ export default function SettingsPage() {
     licenseKeyInput,
     licenseActivating,
     licenseError,
+    showProWelcome,
     selectedFolder,
     editingFolder,
     folderLimitAlert,
@@ -39,6 +38,7 @@ export default function SettingsPage() {
     setLicenseKeyInput,
     setSelectedFolder,
     setFolderFilter,
+    setShowProWelcome,
     handleBack,
     handleChangeMasterPassword,
     handleExportVault,
@@ -67,6 +67,39 @@ export default function SettingsPage() {
 
       <div className={styles.contentArea}>
         <Flex direction="column" gap="3">
+          {/* License (free only) — first card */}
+          {!licenseStatus?.is_active && (
+            <Card size="1" className={styles.licenseCard}>
+              <Flex direction="column" gap="3">
+                <Flex align="center" gap="2">
+                  <div className={styles.licenseIconWrap}>
+                    <Crown size={16} color="var(--amber-9)" />
+                  </div>
+                  <Heading size="3">Activate Pro License</Heading>
+                </Flex>
+                <Text size="2" color="gray">Enter your license key to unlock unlimited entries and folders.</Text>
+                <Flex gap="2">
+                  <TextField.Root
+                    size="2"
+                    placeholder="XXXX-XXXX-XXXX-XXXX"
+                    value={licenseKeyInput}
+                    onChange={(e) => setLicenseKeyInput(e.target.value)}
+                    className={styles.licenseInput}
+                  />
+                  <Button
+                    size="2"
+                    disabled={licenseActivating || licenseKeyInput.trim() === ''}
+                    onClick={() => activateLicense(licenseKeyInput.trim())}
+                  >
+                    {licenseActivating ? 'Activating…' : 'Activate'}
+                  </Button>
+                </Flex>
+                {licenseError && <Text size="1" color="red">{licenseError}</Text>}
+              </Flex>
+            </Card>
+          )}
+
+          {/* Security */}
           <Card size="1">
             <Flex direction="column" gap="2">
               <Heading size="2">
@@ -83,6 +116,7 @@ export default function SettingsPage() {
             </Flex>
           </Card>
 
+          {/* Backup */}
           <Card size="1">
             <Flex direction="column" gap="2">
               <Heading size="2">
@@ -99,43 +133,7 @@ export default function SettingsPage() {
             </Flex>
           </Card>
 
-          <Card size="1">
-            <Flex direction="column" gap="2">
-              <Heading size="2">
-                <Flex as="span" align="center" gap="1"><Zap size={14} /> License</Flex>
-              </Heading>
-              {licenseStatus?.is_active ? (
-                <Flex align="center" gap="2">
-                  <Box className={styles.statusDot} />
-                  <Text size="2" color="green" weight="medium">Pro · Active</Text>
-                </Flex>
-              ) : (
-                <Flex direction="column" gap="2">
-                  <Text size="2" color="gray">Enter your license key to unlock unlimited passwords and folders.</Text>
-                  <Flex gap="2">
-                    <TextField.Root
-                      size="1"
-                      placeholder="License key..."
-                      value={licenseKeyInput}
-                      onChange={(e) => setLicenseKeyInput(e.target.value)}
-                      style={{ flex: 1 }}
-                    />
-                    <Button
-                      size="1"
-                      disabled={licenseActivating || licenseKeyInput.trim() === ''}
-                      onClick={() => activateLicense(licenseKeyInput.trim())}
-                    >
-                      {licenseActivating ? 'Activating…' : 'Activate'}
-                    </Button>
-                  </Flex>
-                  {licenseError && (
-                    <Text size="1" color="red">{licenseError}</Text>
-                  )}
-                </Flex>
-              )}
-            </Flex>
-          </Card>
-
+          {/* Folders */}
           <Card size="1">
             <Flex direction="column" gap="2">
               <Heading size="2">
@@ -178,9 +176,10 @@ export default function SettingsPage() {
             </Flex>
           </Card>
 
+          {/* Danger Zone */}
           <Card size="1" className={styles.dangerCard}>
             <Flex direction="column" gap="2">
-              <Heading size="2" style={{ color: 'var(--red-11)' }}>
+              <Heading size="2" className={styles.dangerHeading}>
                 <Flex as="span" align="center" gap="1"><ShieldOff size={14} /> Danger Zone</Flex>
               </Heading>
               {isDestroyVaultOpen ? (
@@ -189,10 +188,10 @@ export default function SettingsPage() {
                     This will permanently destroy all vault data. This cannot be undone.
                   </Text>
                   <Flex gap="2">
-                    <Button size="1" variant="soft" color="gray" onClick={() => setIsDestroyVaultOpen(false)} style={{ flex: 1 }}>
+                    <Button size="1" variant="soft" color="gray" onClick={() => setIsDestroyVaultOpen(false)} className={styles.dangerActionButton}>
                       Cancel
                     </Button>
-                    <Button size="1" color="red" onClick={confirmDestroyVault} style={{ flex: 1 }}>
+                    <Button size="1" color="red" onClick={confirmDestroyVault} className={styles.dangerActionButton}>
                       Destroy Vault
                     </Button>
                   </Flex>
@@ -211,27 +210,23 @@ export default function SettingsPage() {
             </Flex>
           </Card>
 
-          <Flex direction="column" align="center" gap="1" mt="5">
-            <img src={tinyForgeLogo} alt="Tiny Forge" width={48} height={48} />
-
-            {!licenseStatus?.is_active && (
-              <div className={styles.aboutUpgradeBanner}>
-                <Crown size={12} />
-                <span className={styles.aboutUpgradeBannerText}>Upgrade to Pro — Unlimited entries &amp; folders</span>
-                <button className={styles.aboutUpgradeBannerCta} onClick={() => openUrl(GUMROAD_PRODUCT_URL)}>
-                  Learn More →
-                </button>
-              </div>
+          {/* About section */}
+          <Flex direction="column" align="center" gap="2" mt="5">
+            {licenseStatus?.is_active ? (
+              <span className={styles.membershipPlanPro}>
+                <Crown size={12} color="var(--amber-9)" /> Pro Member
+              </span>
+            ) : (
+              <span className={styles.membershipPlanFree}>Free Member</span>
             )}
 
-            <Box className={styles.aboutText}>
-              {licenseStatus?.is_active ? 'Pro Plan' : 'Free Plan'} — Vaultz v{version}
-            </Box>
-
-            <Box className={styles.aboutText}>
-              © {new Date().getFullYear()}{' '}
-              <a href={homepage} target="_blank" rel="noopener noreferrer">Tiny Forge</a>
-            </Box>
+            <Flex align="center" gap="2">
+              <img src={tinyForgeLogo} alt="Tiny Forge" width={24} height={24} />
+              <span className={styles.aboutFooter}>
+                Vaultz v{version} &copy; {new Date().getFullYear()}{' '}
+                <a href={homepage} target="_blank" rel="noopener noreferrer">Tiny Forge</a>
+              </span>
+            </Flex>
           </Flex>
         </Flex>
       </div>
@@ -280,6 +275,21 @@ export default function SettingsPage() {
         <Box className={styles.toastContainer}>
           <Toast message={folderLimitAlert} variant="warning" />
         </Box>
+      )}
+
+      {showProWelcome && (
+        <div className={styles.proWelcomeOverlay} onClick={() => setShowProWelcome(false)}>
+          <div className={styles.proWelcomeContent} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.proWelcomeIconWrap}>
+              <Crown size={44} color="white" />
+            </div>
+            <h2 className={styles.proWelcomeTitle}>Welcome to Pro!</h2>
+            <p className={styles.proWelcomeSubtitle}>You now have unlimited entries and folders. Enjoy the full Vaultz experience!</p>
+            <button className={styles.proWelcomeDismiss} onClick={() => setShowProWelcome(false)}>
+              Got it
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

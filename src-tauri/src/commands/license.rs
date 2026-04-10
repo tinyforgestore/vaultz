@@ -4,7 +4,7 @@ use tauri::State;
 use crate::database::Database;
 use crate::state::{with_db, DbState};
 
-const PRODUCT_PERMALINK: &str = "vaultz";
+const PRODUCT_ID: &str = "OqW5bpeiBnl32UJLMJsUTg==";
 const GUMROAD_VERIFY_URL: &str = "https://api.gumroad.com/v2/licenses/verify";
 
 pub const FREE_PASSWORD_LIMIT: i64 = 20;
@@ -22,32 +22,59 @@ pub struct LicenseStatus {
 
 #[tauri::command]
 pub async fn activate_license(key: String, db_state: State<'_, DbState>) -> Result<(), String> {
+    let redacted = key.chars().rev().take(4).collect::<String>().chars().rev().collect::<String>();
+    eprintln!("[license] activate_license called with key: ...{}", redacted);
+
     let client = reqwest::Client::builder()
         .use_rustls_tls()
         .build()
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            eprintln!("[license] failed to build HTTP client: {}", e);
+            e.to_string()
+        })?;
 
     let params = [
-        ("product_permalink", PRODUCT_PERMALINK),
+        ("product_id", PRODUCT_ID),
         ("license_key", key.as_str()),
         ("increment_uses_count", "true"),
     ];
+    eprintln!("[license] posting to {} with product_id={}", GUMROAD_VERIFY_URL, PRODUCT_ID);
 
     let resp = client
         .post(GUMROAD_VERIFY_URL)
         .form(&params)
         .send()
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            eprintln!("[license] HTTP request failed: {}", e);
+            e.to_string()
+        })?;
 
-    let body: GumroadVerifyResponse = resp.json().await.map_err(|e| e.to_string())?;
+    let status = resp.status();
+    eprintln!("[license] HTTP response status: {}", status);
+
+    let raw = resp.text().await.map_err(|e| {
+        eprintln!("[license] failed to read response body: {}", e);
+        e.to_string()
+    })?;
+    eprintln!("[license] response body: {}", raw);
+
+    let body: GumroadVerifyResponse = serde_json::from_str(&raw).map_err(|e| {
+        eprintln!("[license] failed to parse response JSON: {}", e);
+        e.to_string()
+    })?;
 
     if !body.success {
+        eprintln!("[license] Gumroad returned success=false");
         return Err("License key is invalid".to_string());
     }
 
+    eprintln!("[license] license valid — storing in DB");
     with_db(&db_state, |db| {
-        db.store_license(&key).map_err(|e| e.to_string())
+        db.store_license(&key).map_err(|e| {
+            eprintln!("[license] failed to store license: {}", e);
+            e.to_string()
+        })
     })
 }
 
@@ -85,7 +112,7 @@ pub async fn validate_license(db_state: State<'_, DbState>) -> Result<bool, Stri
         .map_err(|e| e.to_string())?;
 
     let params = [
-        ("product_permalink", PRODUCT_PERMALINK),
+        ("product_id", PRODUCT_ID),
         ("license_key", key.as_str()),
     ];
 

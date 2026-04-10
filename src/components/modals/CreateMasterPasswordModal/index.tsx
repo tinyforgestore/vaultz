@@ -1,5 +1,6 @@
-import { Dialog, Flex, Text, TextField, Button } from '@radix-ui/themes';
-import { Lock } from 'lucide-react';
+import { useState } from 'react';
+import { Dialog, Flex, Text, TextField, Button, IconButton } from '@radix-ui/themes';
+import { Lock, Eye, EyeOff } from 'lucide-react';
 
 interface CreateMasterPasswordModalProps {
   open: boolean;
@@ -22,6 +23,8 @@ export function CreateMasterPasswordModal({
   onConfirmPasswordChange,
   onCreate,
 }: CreateMasterPasswordModalProps) {
+  const [showPassword, setShowPassword] = useState(false);
+
   return (
     <Dialog.Root open={open}>
       <Dialog.Content style={{ maxWidth: 380 }}>
@@ -48,13 +51,19 @@ export function CreateMasterPasswordModal({
               Master Password
             </Text>
             <TextField.Root
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               placeholder="Enter master password"
               value={password}
               onChange={(e) => onPasswordChange(e.target.value)}
               size="1"
               disabled={isLoading}
-            />
+            >
+              <TextField.Slot side="right">
+                <IconButton size="1" variant="ghost" type="button" tabIndex={-1} onClick={() => setShowPassword(s => !s)}>
+                  {showPassword ? <EyeOff size={12} /> : <Eye size={12} />}
+                </IconButton>
+              </TextField.Slot>
+            </TextField.Root>
           </label>
 
           <label>
@@ -62,13 +71,19 @@ export function CreateMasterPasswordModal({
               Confirm Password
             </Text>
             <TextField.Root
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               placeholder="Confirm master password"
               value={confirmPassword}
               onChange={(e) => onConfirmPasswordChange(e.target.value)}
               size="1"
               disabled={isLoading}
-            />
+            >
+              <TextField.Slot side="right">
+                <IconButton size="1" variant="ghost" type="button" tabIndex={-1} onClick={() => setShowPassword(s => !s)}>
+                  {showPassword ? <EyeOff size={12} /> : <Eye size={12} />}
+                </IconButton>
+              </TextField.Slot>
+            </TextField.Root>
           </label>
         </Flex>
 

@@ -16,6 +16,7 @@ export function useSettings() {
   const [licenseKeyInput, setLicenseKeyInput] = useState('');
   const [licenseActivating, setLicenseActivating] = useState(false);
   const [licenseError, setLicenseError] = useState<string | null>(null);
+  const [showProWelcome, setShowProWelcome] = useState(false);
 
   const changeMasterPassword = useSetAtom(changeMasterPasswordAtom);
   const logout = useSetAtom(logoutAtom);
@@ -47,6 +48,7 @@ export function useSettings() {
       .then((status) => {
         setLicenseStatus(status);
         setLicenseKeyInput('');
+        setShowProWelcome(true);
       })
       .catch((err: unknown) => {
         const msg = err instanceof Error ? err.message : String(err);
@@ -62,37 +64,41 @@ export function useSettings() {
   const handleExportVault = () => setIsExportVaultOpen(true);
   const handleDestroyVault = () => setIsDestroyVaultOpen(true);
 
-  const confirmDestroyVault = async () => {
-    try {
-      await invoke('destroy_vault');
-      logout();
-      navigate('/login');
-    } catch (err) {
-      console.error('Error destroying vault:', err);
-    }
+  const confirmDestroyVault = () => {
+    return invoke('destroy_vault')
+      .then(() => {
+        logout();
+        navigate('/login');
+      })
+      .catch((err: unknown) => {
+        console.error('Error destroying vault:', err);
+      });
   };
 
-  const confirmExportVault = async (passphrase: string) => {
-    const path = await save({
+  const confirmExportVault = (passphrase: string) => {
+    return save({
       defaultPath: 'vault-export.pmvault',
       filters: [VAULT_FILE_FILTER],
+    }).then((path) => {
+      if (!path) return;
+      return invoke('export_vault', { passphrase, path }).then(() => {
+        setIsExportVaultOpen(false);
+      });
     });
-    if (!path) return;
-    await invoke('export_vault', { passphrase, path });
-    setIsExportVaultOpen(false);
   };
 
-  const confirmChangeMasterPassword = async (currentPassword: string, newPassword: string) => {
-    try {
-      const success = await changeMasterPassword({ currentPassword, newPassword });
-      if (success) {
-        setIsChangeMasterPasswordOpen(false);
-      } else {
-        console.error('Failed to change master password');
-      }
-    } catch (err) {
-      console.error('Error changing master password:', err);
-    }
+  const confirmChangeMasterPassword = (currentPassword: string, newPassword: string) => {
+    return changeMasterPassword({ currentPassword, newPassword })
+      .then((success) => {
+        if (success) {
+          setIsChangeMasterPasswordOpen(false);
+        } else {
+          console.error('Failed to change master password');
+        }
+      })
+      .catch((err: unknown) => {
+        console.error('Error changing master password:', err);
+      });
   };
 
   return {
@@ -103,12 +109,14 @@ export function useSettings() {
     licenseKeyInput,
     licenseActivating,
     licenseError,
+    showProWelcome,
     ...folderManager,
 
     setIsChangeMasterPasswordOpen,
     setIsExportVaultOpen,
     setIsDestroyVaultOpen,
     setLicenseKeyInput,
+    setShowProWelcome,
 
     handleBack,
     handleChangeMasterPassword,

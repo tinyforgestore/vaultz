@@ -29,6 +29,7 @@ export default function LoginPage() {
     handleImportVault,
     confirmImportVault,
     importSuccess,
+    vaultCreated,
   } = useLoginPage();
 
   if (isCheckingDatabase) {
@@ -159,6 +160,12 @@ export default function LoginPage() {
           onConfirm={confirmImportVault}
           onCancel={() => setImportFilePath(null)}
         />
+      )}
+
+      {vaultCreated && (
+        <div className={styles.toastContainer}>
+          <Toast message="Vault created! Enter your master password to unlock." variant="success" />
+        </div>
       )}
 
       {importSuccess && (
