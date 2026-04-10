@@ -70,8 +70,16 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           APPLE_SIGNING_IDENTITY: "-"
         with:
-          releaseId: ${{ needs.create-release.outputs.release_id }}
           args: --target universal-apple-darwin
+
+      - name: Upload macOS artifact
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DMG=$(find src-tauri/target/universal-apple-darwin/release/bundle/dmg -name "*.dmg" | head -1)
+          cp "$DMG" Vaultz_universal.dmg
+          gh release upload "${{ inputs.tag }}" Vaultz_universal.dmg \
+            --repo "${{ github.repository }}" --clobber
 
   build-windows:
     name: Build Windows (.msi / .exe)
@@ -109,5 +117,75 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Windows artifact
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          EXE=$(find src-tauri/target/release/bundle/nsis -name "*-setup.exe" | head -1)
+          cp "$EXE" Vaultz_x64-setup.exe
+          gh release upload "${{ inputs.tag }}" Vaultz_x64-setup.exe \
+            --repo "${{ github.repository }}" --clobber
+
+  build-linux:
+    name: Build Linux (.AppImage)
+    needs: create-release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          releaseId: ${{ needs.create-release.outputs.release_id }}
+          ref: ${{ inputs.tag }}
+
+      - name: Install Linux system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libxdo-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Build Tauri app (Linux)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: --bundles appimage
+
+      - name: Upload Linux artifact
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          APPIMAGE=$(find src-tauri/target/release/bundle/appimage -name "*.AppImage" | head -1)
+          cp "$APPIMAGE" Vaultz_amd64.AppImage
+          gh release upload "${{ inputs.tag }}" Vaultz_amd64.AppImage \
+            --repo "${{ github.repository }}" --clobber
