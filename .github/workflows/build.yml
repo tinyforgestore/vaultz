@@ -14,9 +14,12 @@ jobs:
   create-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
+    outputs:
+      release_id: ${{ steps.create.outputs.release_id }}
 
     steps:
       - name: Create release
+        id: create
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -24,6 +27,8 @@ jobs:
             --repo "${{ github.repository }}" \
             --title "Vaultz ${{ inputs.tag }}" \
             --generate-notes
+          ID=$(gh api "repos/${{ github.repository }}/releases/tags/${{ inputs.tag }}" --jq .id)
+          echo "release_id=$ID" >> $GITHUB_OUTPUT
 
   build-macos:
     name: Build macOS (.dmg)
@@ -59,19 +64,23 @@ jobs:
         with:
           workspaces: src-tauri
 
-      - name: Build Tauri app (macOS)
-        run: pnpm tauri build --target universal-apple-darwin
+      - name: Build and upload Tauri app (macOS)
+        uses: tauri-apps/tauri-action@v0
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           APPLE_SIGNING_IDENTITY: "-"
+        with:
+          releaseId: ${{ needs.create-release.outputs.release_id }}
+          args: --target universal-apple-darwin
 
-      - name: Upload macOS artifact
+      - name: Rename macOS artifact to stable name
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          DMG=$(find src-tauri/target/universal-apple-darwin/release/bundle/dmg -name "*.dmg" | head -1)
-          cp "$DMG" Vaultz_universal.dmg
-          gh release upload "${{ inputs.tag }}" Vaultz_universal.dmg \
-            --repo "${{ github.repository }}" --clobber
+          ASSET_ID=$(gh api "repos/${{ github.repository }}/releases/${{ needs.create-release.outputs.release_id }}/assets" \
+            --jq '.[] | select(.name | endswith(".dmg")) | .id')
+          gh api -X PATCH "repos/${{ github.repository }}/releases/assets/$ASSET_ID" \
+            -f name="Vaultz_universal.dmg"
 
   build-windows:
     name: Build Windows (.msi / .exe)
@@ -105,18 +114,22 @@ jobs:
         with:
           workspaces: src-tauri
 
-      - name: Build Tauri app (Windows)
-        run: pnpm tauri build
+      - name: Build and upload Tauri app (Windows)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          releaseId: ${{ needs.create-release.outputs.release_id }}
 
-      - name: Upload Windows artifact
+      - name: Rename Windows artifact to stable name
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
-          EXE=$(find src-tauri/target/release/bundle/nsis -name "*-setup.exe" | head -1)
-          cp "$EXE" Vaultz_x64-setup.exe
-          gh release upload "${{ inputs.tag }}" Vaultz_x64-setup.exe \
-            --repo "${{ github.repository }}" --clobber
+          ASSET_ID=$(gh api "repos/${{ github.repository }}/releases/${{ needs.create-release.outputs.release_id }}/assets" \
+            --jq '.[] | select(.name | endswith("-setup.exe")) | .id')
+          gh api -X PATCH "repos/${{ github.repository }}/releases/assets/$ASSET_ID" \
+            -f name="Vaultz_x64-setup.exe"
 
   build-linux:
     name: Build Linux (.AppImage)
@@ -164,14 +177,19 @@ jobs:
         with:
           workspaces: src-tauri
 
-      - name: Build Tauri app (Linux)
-        run: pnpm tauri build --bundles appimage
+      - name: Build and upload Tauri app (Linux)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          releaseId: ${{ needs.create-release.outputs.release_id }}
+          args: --bundles appimage
 
-      - name: Upload Linux artifact
+      - name: Rename Linux artifact to stable name
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          APPIMAGE=$(find src-tauri/target/release/bundle/appimage -name "*.AppImage" | head -1)
-          cp "$APPIMAGE" Vaultz_amd64.AppImage
-          gh release upload "${{ inputs.tag }}" Vaultz_amd64.AppImage \
-            --repo "${{ github.repository }}" --clobber
+          ASSET_ID=$(gh api "repos/${{ github.repository }}/releases/${{ needs.create-release.outputs.release_id }}/assets" \
+            --jq '.[] | select(.name | endswith(".AppImage")) | .id')
+          gh api -X PATCH "repos/${{ github.repository }}/releases/assets/$ASSET_ID" \
+            -f name="Vaultz_amd64.AppImage"
