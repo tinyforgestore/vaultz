@@ -14,12 +14,9 @@ jobs:
   create-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
-    outputs:
-      release_id: ${{ steps.create.outputs.release_id }}
 
     steps:
       - name: Create release
-        id: create
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -27,8 +24,6 @@ jobs:
             --repo "${{ github.repository }}" \
             --title "Vaultz ${{ inputs.tag }}" \
             --generate-notes
-          ID=$(gh api "repos/${{ github.repository }}/releases/tags/${{ inputs.tag }}" --jq .id)
-          echo "release_id=$ID" >> $GITHUB_OUTPUT
 
   build-macos:
     name: Build macOS (.dmg)
@@ -65,12 +60,9 @@ jobs:
           workspaces: src-tauri
 
       - name: Build Tauri app (macOS)
-        uses: tauri-apps/tauri-action@v0
+        run: pnpm tauri build --target universal-apple-darwin
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           APPLE_SIGNING_IDENTITY: "-"
-        with:
-          args: --target universal-apple-darwin
 
       - name: Upload macOS artifact
         env:
@@ -114,9 +106,7 @@ jobs:
           workspaces: src-tauri
 
       - name: Build Tauri app (Windows)
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: pnpm tauri build
 
       - name: Upload Windows artifact
         env:
@@ -175,11 +165,7 @@ jobs:
           workspaces: src-tauri
 
       - name: Build Tauri app (Linux)
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          args: --bundles appimage
+        run: pnpm tauri build --bundles appimage
 
       - name: Upload Linux artifact
         env:
