@@ -1,220 +1,44 @@
-# Password Manager
+<div align="center">
+  <img src="assets/logo.png" alt="Vaultz" width="80" />
+  <h1>Vaultz</h1>
 
-A local-first desktop password manager built with Tauri 2, React 19, and SQLite. All data is stored on your machine — no cloud, no sync, no accounts.
+  [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
+  ![Platform](https://img.shields.io/badge/platform-macOS%20·%20Windows%20·%20Linux-lightgrey)
 
-## Features
+  **A password manager that doesn't phone home.**
 
-- **Vault creation** — set a master password on first launch; vault is stored locally in your OS app data directory
-- **Master password** — hashed with Argon2 + random salt; never stored in plain text
-- **Field-level encryption** — passwords and notes are encrypted at rest with AES-256-GCM; the encryption key is derived from your master password via Argon2 and held only in memory for the session
-- **Full CRUD** — create, view, edit, delete passwords and folders
-- **Password generator** — configurable length (8–32), uppercase/lowercase/numbers/symbols
-- **Favorites** — star passwords for quick access via the Favorites tab
-- **Bulk actions** — multi-select, bulk delete, bulk favorite/unfavorite
-- **Search** — search by name, username, email, or website
-- **Auto-lock** — vault locks automatically after 5 minutes of inactivity
-- **Change master password** — re-encrypts all stored fields with the new key
-- **Vault export** — exports an AES-256-GCM encrypted `.pmvault` file protected by a separate passphrase
-- **Vault import** — restores from a `.pmvault` backup file
-- **Destroy vault** — permanently wipes the local database
-- **pmcli** — standalone command-line tool for vault inspection and operations (`scripts/pmcli`)
+  <a href="https://github.com/tinyforgestore/vaultz/releases/latest"><img src="https://img.shields.io/badge/Download-Latest-black?style=for-the-badge" /></a>
+  &nbsp;
+  <a href="https://tinyforgestore.gumroad.com/l/vaultz"><img src="https://img.shields.io/badge/Buy%20Vaultz-$12-orange?style=for-the-badge" /></a>
+
+  <br />
+  <img src="assets/banner.png" alt="Vaultz screenshot" width="100%" />
+</div>
+
+---
+
+## About
+
+Vaultz stores your passwords locally — no cloud, no account, no subscription. Everything is encrypted with AES-256-GCM using a key derived from your master password; nothing ever leaves your machine. It runs natively on macOS, Windows, and Linux. One-time price, no recurring fees.
 
 ## Getting Started
 
-### Prerequisites
-
-- [Node.js](https://nodejs.org/) 20+
-- [pnpm](https://pnpm.io/) 10
-- [Rust](https://www.rust-lang.org/tools/install) (stable toolchain)
-- [Tauri prerequisites](https://tauri.app/start/prerequisites/) for your platform
-
-### Install dependencies
+**Prerequisites:** Node 20, pnpm 10, Rust stable, [Tauri prerequisites](https://tauri.app/start/prerequisites/)
 
 ```bash
-pnpm install
+pnpm install        # install dependencies
+pnpm tauri dev      # run in development mode
+pnpm tauri build    # build for production
 ```
 
-### Run in development mode
+## Open Core
 
-```bash
-pnpm tauri dev
-```
-
-### Build for production
-
-```bash
-pnpm tauri build
-```
-
-The built app will be in `src-tauri/target/release/bundle/`.
-
-## Usage
-
-1. **First launch** — click "Create Vault" and set a master password (8+ characters)
-2. **Login** — enter your master password; the vault auto-locks after 5 minutes of inactivity
-3. **Add a password** — click the `+` button on the dashboard, fill in the fields, and save
-4. **Generate a password** — use the embedded generator inside the create/edit modal
-5. **Organize** — create folders and move passwords between them via the tab strip
-6. **Favorites** — star passwords for quick access via the Favorites tab
-7. **Bulk actions** — click the selection icon in the top bar to enter multi-select mode
-8. **Settings** — change your master password, export or destroy your vault
-9. **Export** — Settings → Export Vault → choose a passphrase; produces a `.pmvault` file
-10. **Import** — on the login screen, click "Import Vault" and enter the export passphrase
-
-## Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Desktop shell | Tauri 2 |
-| Frontend | React 19, Vite 7, React Router 7 |
-| State management | Jotai 2 |
-| Styling | Vanilla Extract (type-safe CSS-in-JS) |
-| UI components | Radix UI Themes 3 |
-| Icons | Lucide Icons |
-| Database | SQLite via rusqlite (bundled) |
-| Password hashing | Argon2 (argon2 crate) |
-| Field encryption | AES-256-GCM (aes-gcm crate) |
-
-## Project Structure
-
-```
-src/
-├── components/
-│   ├── App/                  # Root layout, SessionWrapper
-│   ├── modals/               # Create/edit/delete dialogs (passwords, folders, vault ops)
-│   ├── PasswordCard/         # Password list item
-│   ├── PasswordGenerator/    # Inline password generator widget
-│   └── Toast/                # Clipboard toast notification
-├── pages/
-│   ├── LoginPage/
-│   ├── Dashboard/
-│   ├── PasswordDetailsPage/
-│   └── SettingsPage/
-├── hooks/                    # Business logic (one hook per page/feature)
-│   ├── useClipboard.ts
-│   ├── useDashboard.ts
-│   ├── useFolderManager.ts
-│   ├── useLoginPage.ts
-│   ├── usePasswordDetails.ts
-│   ├── usePasswordGenerator.ts
-│   ├── usePasswordSelection.ts
-│   ├── useSessionActivity.ts
-│   └── useSettings.ts
-├── utils/
-│   └── passwordGenerator.ts  # buildPassword utility (charset constants + generation logic)
-├── services/
-│   ├── sessionService.ts     # Auth, session timeout, activity tracking
-│   └── storageService.ts     # Tauri invoke wrappers for all backend commands
-├── store/atoms.ts            # Jotai atoms + async action atoms
-├── types/index.ts            # TypeScript interfaces (Password, Folder, …)
-├── constants/                # Folder IDs, limits
-└── testUtils.tsx             # Jotai + MemoryRouter test provider
-
-src-tauri/src/
-├── lib.rs                    # Tauri app setup, plugin registration, command registration
-├── state.rs                  # SessionState, DbState, shared helpers (with_db, parse_id)
-├── crypto.rs                 # Argon2 hashing, AES-GCM encrypt/decrypt, key derivation
-├── database/
-│   ├── mod.rs                # Database struct, schema, migrations, test_helpers
-│   ├── models.rs             # Rust structs (PasswordEntry, FolderEntry, input types)
-│   ├── master.rs             # Master password hash + encryption salt CRUD
-│   ├── folders.rs            # Folder CRUD + reassign
-│   └── passwords.rs          # Password CRUD, search, bulk delete, encryption helpers
-└── commands/
-    ├── session/
-    │   ├── setup.rs          # initialize_database, database_exists
-    │   ├── auth.rs           # login, logout, is_authenticated, activity, timeout
-    │   └── master.rs         # verify_master_password, change_master_password
-    ├── folders.rs            # get_folders, create_folder, delete_folder
-    ├── passwords.rs          # get_passwords, create/update/delete, search
-    ├── vault.rs              # export_vault, import_vault, destroy_vault
-    └── clipboard.rs          # write_secret_to_clipboard (concealed from clipboard managers)
-
-scripts/
-├── pmcli                     # CLI tool: list/get/export vault entries from the terminal
-├── verify-vault              # Verify .pmvault file integrity
-└── bump-version.sh           # Bump version in package.json, tauri.conf.json, Cargo.toml; commit + tag
-
-eslint.config.js              # ESLint flat config (typescript-eslint, react-hooks, react-refresh)
-.github/workflows/
-├── ci.yml                    # Lint + type-check on every push/PR to main
-├── build.yml                 # Tauri production build (macOS universal + Windows) on v* tags
-└── bump-version.yml          # Workflow dispatch: bump version via scripts/bump-version.sh
-```
-
-## Testing
-
-### React (Vitest + Testing Library)
-
-```bash
-pnpm test          # run once
-pnpm test --watch  # watch mode
-```
-
-- **174 tests** across 16 files
-- Tests are co-located with source files (e.g. `useClipboard.ts` → `useClipboard.test.ts`)
-- Tauri APIs are mocked via `__mocks__/@tauri-apps/`
-- Jotai store is isolated per test via a custom `renderHookWithProviders` wrapper
-
-### Rust (cargo test)
-
-```bash
-cd src-tauri
-cargo test
-```
-
-- **71 tests** across 12 modules
-- Each module has an inline `#[cfg(test)] mod tests` block
-- Database tests use an in-memory SQLite helper (`database::test_helpers::in_memory_db`)
-- Commands are tested by calling their inner business logic directly (Tauri `State<T>` is not constructable without a runtime)
-
-## Contributing
-
-### Branch naming
-
-```
-feature/<description>    # new features
-fix/<description>        # bug fixes
-```
-
-### Before committing (Rust)
-
-```bash
-cargo fmt
-cargo clippy
-cargo test
-```
-
-### Before committing (Frontend)
-
-ESLint and `tsc` run automatically via a Husky pre-commit hook — no manual steps needed for linting and type-checking. To verify manually before committing:
-
-```bash
-pnpm lint           # ESLint
-pnpm tsc            # TypeScript type-check (no emit)
-pnpm test --run     # confirm all tests pass
-```
-
-## CI/CD
-
-Three GitHub Actions workflows ship with the repo:
-
-| Workflow | Trigger | What it does |
-|---|---|---|
-| `ci.yml` | Push / PR to `main` | Runs `pnpm lint` then `pnpm tsc` on ubuntu-latest (Node 20, pnpm 10) |
-| `build.yml` | Push of a `v*` tag | Builds Tauri app for macOS (universal binary: arm64 + x86_64) and Windows |
-| `bump-version.yml` | Manual (`workflow_dispatch`) | Calls `scripts/bump-version.sh`, commits version bump, and tags the release |
-
-To cut a release, run the **Bump Version** workflow with the new semver (e.g. `1.2.0`). This commits the version bump and pushes a `v1.2.0` tag, which triggers the **Build** workflow automatically.
-
-## Data Location
-
-| Platform | Path |
-|---|---|
-| macOS | `~/Library/Application Support/store.tinyforge.vaultz/passwords.db` |
-| Windows | `%APPDATA%\store.tinyforge.vaultz\passwords.db` |
-| Linux | `~/.local/share/store.tinyforge.vaultz/passwords.db` |
+The source code is released under GPLv3. Pre-built binaries are sold at $12 on Gumroad — buying a license supports continued development and unlocks unlimited entries.
 
 ## License
 
-Personal project — not licensed for distribution.
+Distributed under GPLv3. See `LICENSE` for more information.
+
+---
+
+<div align="center">Vaultz by <a href="https://tinyforge.store">Tiny Forge</a> · tinyforge.store</div>
