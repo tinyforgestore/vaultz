@@ -7,36 +7,15 @@ vi.mock('react-router-dom', async (importOriginal) => {
   return { ...actual, useParams: vi.fn(() => ({ id: 'p1' })) };
 });
 
-import { renderHookWithProviders } from '@/testUtils';
+import { renderHookWithProviders, makePassword, makeFolder } from '@/testUtils';
 import { usePasswordDetails } from './usePasswordDetails';
 import { allPasswordsAtom, foldersAtom } from '@/store/atoms';
-import type { Password, Folder } from '@/types';
 
-const makePassword = (overrides: Partial<Password> = {}): Password => ({
-  id: 'p1',
-  name: 'GitHub',
-  username: 'user',
-  password: 'secret',
-  isFavorite: false,
-  folderId: 'f1',
-  createdAt: new Date(),
-  updatedAt: new Date(),
-  ...overrides,
-});
-
-const makeFolder = (): Folder => ({
-  id: 'f1',
-  name: 'Work',
-  icon: 'briefcase',
-  isDefault: false,
-  createdAt: new Date(),
-});
-
-function setup(password = makePassword()) {
+function setup(password = makePassword({ id: 'p1' })) {
   const { result, store } = renderHookWithProviders(() => usePasswordDetails());
   act(() => {
     store.set(allPasswordsAtom, [password]);
-    store.set(foldersAtom, [makeFolder()]);
+    store.set(foldersAtom, [makeFolder({ id: 'f1', name: 'Work', icon: 'briefcase' })]);
   });
   return { result, store };
 }

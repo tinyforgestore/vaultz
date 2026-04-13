@@ -25,28 +25,9 @@ import {
 } from './atoms';
 import { SPECIAL_FOLDERS } from '@/constants/folders';
 import type { Password, Folder } from '@/types';
+import { makePassword, makeFolder } from '@/testUtils';
 
 const mockInvoke = vi.mocked(invoke);
-
-const makePassword = (id: string, overrides: Partial<Password> = {}): Password => ({
-  id,
-  name: `Password ${id}`,
-  username: 'user',
-  password: 'secret',
-  isFavorite: false,
-  folderId: 'f1',
-  createdAt: new Date(),
-  updatedAt: new Date(),
-  ...overrides,
-});
-
-const makeFolder = (id: string): Folder => ({
-  id,
-  name: `Folder ${id}`,
-  icon: 'folder',
-  isDefault: false,
-  createdAt: new Date(),
-});
 
 const raw = (p: Password) => ({ ...p, createdAt: p.createdAt.toISOString(), updatedAt: p.updatedAt.toISOString() });
 const rawFolder = (f: Folder) => ({ ...f, createdAt: f.createdAt.toISOString() });
@@ -58,8 +39,8 @@ function store() {
 describe('loadInitialDataAtom', () => {
   it('populates folders and passwords from storageService', async () => {
     const s = store();
-    const folders = [makeFolder('f1')];
-    const passwords = [makePassword('p1')];
+    const folders = [makeFolder({ id: 'f1' })];
+    const passwords = [makePassword({ id: 'p1' })];
     mockInvoke.mockImplementation((cmd: unknown) => {
       if (cmd === 'get_folders') return Promise.resolve(folders.map(rawFolder));
       if (cmd === 'get_passwords') return Promise.resolve(passwords.map(raw));
@@ -74,7 +55,7 @@ describe('loadInitialDataAtom', () => {
 describe('createPasswordAtom', () => {
   it('appends new password to allPasswordsAtom', async () => {
     const s = store();
-    const newPw = makePassword('p1');
+    const newPw = makePassword({ id: 'p1' });
     mockInvoke.mockResolvedValueOnce(raw(newPw));
     await s.set(createPasswordAtom, { serviceName: 'GitHub', username: 'u', password: 'p' });
     expect(s.get(allPasswordsAtom)).toHaveLength(1);
@@ -85,8 +66,8 @@ describe('createPasswordAtom', () => {
 describe('updatePasswordAtom', () => {
   it('replaces the updated password in the list', async () => {
     const s = store();
-    const original = makePassword('p1', { name: 'Old' });
-    const updated = makePassword('p1', { name: 'New' });
+    const original = makePassword({ id: 'p1', name: 'Old' });
+    const updated = makePassword({ id: 'p1', name: 'New' });
     s.set(allPasswordsAtom, [original]);
     mockInvoke.mockResolvedValueOnce(raw(updated));
     await s.set(updatePasswordAtom, { id: 'p1', updates: { name: 'New' } });
@@ -97,7 +78,7 @@ describe('updatePasswordAtom', () => {
 describe('deletePasswordAtom', () => {
   it('removes the password from the list', async () => {
     const s = store();
-    s.set(allPasswordsAtom, [makePassword('p1'), makePassword('p2')]);
+    s.set(allPasswordsAtom, [makePassword({ id: 'p1' }), makePassword({ id: 'p2' })]);
     mockInvoke.mockResolvedValueOnce(undefined);
     await s.set(deletePasswordAtom, 'p1');
     const ids = s.get(allPasswordsAtom).map(p => p.id);
@@ -109,8 +90,8 @@ describe('deletePasswordAtom', () => {
 describe('toggleFavoriteAtom', () => {
   it('toggles isFavorite on the target password', async () => {
     const s = store();
-    const pw = makePassword('p1', { isFavorite: false });
-    const updated = makePassword('p1', { isFavorite: true });
+    const pw = makePassword({ id: 'p1', isFavorite: false });
+    const updated = makePassword({ id: 'p1', isFavorite: true });
     s.set(allPasswordsAtom, [pw]);
     mockInvoke.mockResolvedValueOnce(raw(updated));
     await s.set(toggleFavoriteAtom, 'p1');
@@ -120,9 +101,9 @@ describe('toggleFavoriteAtom', () => {
   it('sets favoriteAlertAtom when folder limit reached', async () => {
     const s = store();
     const favs = [
-      makePassword('p1', { isFavorite: true, folderId: 'f1' }),
-      makePassword('p2', { isFavorite: true, folderId: 'f1' }),
-      makePassword('p3', { isFavorite: false, folderId: 'f1' }),
+      makePassword({ id: 'p1', isFavorite: true, folderId: 'f1' }),
+      makePassword({ id: 'p2', isFavorite: true, folderId: 'f1' }),
+      makePassword({ id: 'p3', isFavorite: false, folderId: 'f1' }),
     ];
     s.set(allPasswordsAtom, favs);
     await s.set(toggleFavoriteAtom, 'p3');
@@ -132,7 +113,7 @@ describe('toggleFavoriteAtom', () => {
 
   it('does nothing for unknown id', async () => {
     const s = store();
-    s.set(allPasswordsAtom, [makePassword('p1')]);
+    s.set(allPasswordsAtom, [makePassword({ id: 'p1' })]);
     await s.set(toggleFavoriteAtom, 'unknown');
     expect(mockInvoke).not.toHaveBeenCalled();
   });
@@ -141,7 +122,7 @@ describe('toggleFavoriteAtom', () => {
 describe('createFolderAtom', () => {
   it('appends new folder to foldersAtom', async () => {
     const s = store();
-    const newFolder = makeFolder('f1');
+    const newFolder = makeFolder({ id: 'f1' });
     mockInvoke.mockResolvedValueOnce(rawFolder(newFolder));
     await s.set(createFolderAtom, { name: 'Work', icon: 'briefcase' });
     expect(s.get(foldersAtom)).toHaveLength(1);
@@ -152,7 +133,7 @@ describe('createFolderAtom', () => {
 describe('deleteFolderAtom', () => {
   it('removes folder and reloads passwords', async () => {
     const s = store();
-    s.set(foldersAtom, [makeFolder('f1'), makeFolder('f2')]);
+    s.set(foldersAtom, [makeFolder({ id: 'f1' }), makeFolder({ id: 'f2' })]);
     mockInvoke.mockImplementation((cmd: unknown) => {
       if (cmd === 'get_passwords') return Promise.resolve([]);
       return Promise.resolve(undefined);
@@ -167,7 +148,7 @@ describe('deleteFolderAtom', () => {
 describe('bulkDeleteAtom', () => {
   it('deletes selected passwords and clears selection', async () => {
     const s = store();
-    s.set(allPasswordsAtom, [makePassword('p1'), makePassword('p2'), makePassword('p3')]);
+    s.set(allPasswordsAtom, [makePassword({ id: 'p1' }), makePassword({ id: 'p2' }), makePassword({ id: 'p3' })]);
     s.set(selectedPasswordIdsAtom, new Set(['p1', 'p2']));
     mockInvoke.mockResolvedValueOnce(undefined);
     await s.set(bulkDeleteAtom);
@@ -178,7 +159,7 @@ describe('bulkDeleteAtom', () => {
 
   it('does nothing when selection is empty', async () => {
     const s = store();
-    s.set(allPasswordsAtom, [makePassword('p1')]);
+    s.set(allPasswordsAtom, [makePassword({ id: 'p1' })]);
     await s.set(bulkDeleteAtom);
     expect(mockInvoke).not.toHaveBeenCalled();
   });
@@ -187,8 +168,8 @@ describe('bulkDeleteAtom', () => {
 describe('bulkToggleFavoriteAtom', () => {
   it('favorites all selected passwords', async () => {
     const s = store();
-    const p1 = makePassword('p1', { isFavorite: false });
-    const p2 = makePassword('p2', { isFavorite: false });
+    const p1 = makePassword({ id: 'p1', isFavorite: false });
+    const p2 = makePassword({ id: 'p2', isFavorite: false });
     s.set(allPasswordsAtom, [p1, p2]);
     s.set(selectedPasswordIdsAtom, new Set(['p1', 'p2']));
     mockInvoke.mockImplementation((cmd: unknown, args: unknown) => {
@@ -202,9 +183,9 @@ describe('bulkToggleFavoriteAtom', () => {
   it('sets favoriteAlertAtom when limit is reached for some', async () => {
     const s = store();
     const existing = [
-      makePassword('p1', { isFavorite: true, folderId: 'f1' }),
-      makePassword('p2', { isFavorite: true, folderId: 'f1' }),
-      makePassword('p3', { isFavorite: false, folderId: 'f1' }),
+      makePassword({ id: 'p1', isFavorite: true, folderId: 'f1' }),
+      makePassword({ id: 'p2', isFavorite: true, folderId: 'f1' }),
+      makePassword({ id: 'p3', isFavorite: false, folderId: 'f1' }),
     ];
     s.set(allPasswordsAtom, existing);
     s.set(selectedPasswordIdsAtom, new Set(['p3']));
@@ -223,7 +204,7 @@ describe('logoutAtom', () => {
   it('resets auth, passwords, folder selection, and search', () => {
     const s = store();
     s.set(isAuthenticatedAtom, true);
-    s.set(allPasswordsAtom, [makePassword('p1')]);
+    s.set(allPasswordsAtom, [makePassword({ id: 'p1' })]);
     s.set(selectedFolderAtom, 'f1');
     s.set(logoutAtom);
     expect(s.get(isAuthenticatedAtom)).toBe(false);

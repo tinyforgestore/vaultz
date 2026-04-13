@@ -5,3 +5,10 @@ import { vi } from 'vitest';
 Object.assign(navigator, {
   clipboard: { writeText: vi.fn().mockResolvedValue(undefined) },
 });
+
+// jsdom does not implement ResizeObserver (used by Radix UI Slider and ScrollArea)
+global.ResizeObserver = class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};

@@ -8,7 +8,7 @@ vi.mock('@/services/sessionService', () => ({
 }));
 
 import { invoke } from '@tauri-apps/api/core';
-import { renderHookWithProviders } from '@/testUtils';
+import { renderHookWithProviders, makePassword, makeFolder } from '@/testUtils';
 import { useDashboard } from './useDashboard';
 import {
   allPasswordsAtom,
@@ -17,29 +17,8 @@ import {
   isAuthenticatedAtom,
 } from '@/store/atoms';
 import { SPECIAL_FOLDERS } from '@/constants/folders';
-import type { Password, Folder } from '@/types';
 
 const mockInvoke = vi.mocked(invoke);
-
-const makePassword = (id: string, overrides: Partial<Password> = {}): Password => ({
-  id,
-  name: `pw-${id}`,
-  username: 'u',
-  password: 'p',
-  isFavorite: false,
-  folderId: 'f1',
-  createdAt: new Date(),
-  updatedAt: new Date(),
-  ...overrides,
-});
-
-const makeFolder = (id: string): Folder => ({
-  id,
-  name: `Folder ${id}`,
-  icon: 'folder',
-  isDefault: false,
-  createdAt: new Date(),
-});
 
 function setup() {
   mockInvoke.mockImplementation((cmd: unknown) => {
@@ -63,7 +42,7 @@ describe('useDashboard', () => {
 
   describe('visibleFolders', () => {
     it('hides Favorites tab when there are no favorites', async () => {
-      const pw = makePassword('p1', { isFavorite: false });
+      const pw = makePassword({ id: 'p1', isFavorite: false });
       mockInvoke.mockImplementation((cmd: unknown) => {
         if (cmd === 'get_folders') return Promise.resolve([]);
         if (cmd === 'get_passwords') return Promise.resolve([{ ...pw, createdAt: pw.createdAt.toISOString(), updatedAt: pw.updatedAt.toISOString() }]);
@@ -76,7 +55,7 @@ describe('useDashboard', () => {
     });
 
     it('shows Favorites tab when at least one password is favorited', async () => {
-      const pw = makePassword('p1', { isFavorite: true });
+      const pw = makePassword({ id: 'p1', isFavorite: true });
       mockInvoke.mockImplementation((cmd: unknown) => {
         if (cmd === 'get_folders') return Promise.resolve([]);
         if (cmd === 'get_passwords') return Promise.resolve([{ ...pw, createdAt: pw.createdAt.toISOString(), updatedAt: pw.updatedAt.toISOString() }]);
@@ -91,7 +70,7 @@ describe('useDashboard', () => {
 
   describe('auto-deselect Favorites', () => {
     it('switches to All when selected folder is Favorites and count drops to 0', async () => {
-      const favPw = makePassword('p1', { isFavorite: true });
+      const favPw = makePassword({ id: 'p1', isFavorite: true });
       const rawFav = { ...favPw, createdAt: favPw.createdAt.toISOString(), updatedAt: favPw.updatedAt.toISOString() };
       mockInvoke.mockImplementation((cmd: unknown) => {
         if (cmd === 'get_folders') return Promise.resolve([]);
@@ -104,7 +83,7 @@ describe('useDashboard', () => {
       expect(result.current.selectedFolder).toBe(SPECIAL_FOLDERS.FAVORITES.toString());
       // Remove the favorite — count drops to 0
       await act(async () => {
-        const nonFav = makePassword('p1', { isFavorite: false });
+        const nonFav = makePassword({ id: 'p1', isFavorite: false });
         store.set(allPasswordsAtom, [nonFav]);
       });
       expect(result.current.selectedFolder).toBe(SPECIAL_FOLDERS.ALL.toString());
@@ -123,7 +102,7 @@ describe('useDashboard', () => {
     it('is false when a regular folder is selected', async () => {
       const { result, store } = setup();
       await act(async () => {
-        store.set(foldersAtom, [makeFolder('f1')]);
+        store.set(foldersAtom, [makeFolder({ id: 'f1' })]);
         store.set(selectedFolderAtom, 'f1');
       });
       expect(result.current.showFolderTag).toBe(false);
@@ -147,7 +126,7 @@ describe('useDashboard', () => {
     });
 
     it('confirmCreatePassword closes the modal', async () => {
-      const pw = makePassword('p1');
+      const pw = makePassword({ id: 'p1' });
       mockInvoke.mockImplementation((cmd: unknown) => {
         if (cmd === 'get_folders') return Promise.resolve([]);
         if (cmd === 'get_passwords') return Promise.resolve([]);

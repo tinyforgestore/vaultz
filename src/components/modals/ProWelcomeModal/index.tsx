@@ -7,7 +7,7 @@ interface Props {
 
 export default function ProWelcomeModal({ onClose }: Props) {
   return (
-    <div className={styles.overlay} onClick={onClose}>
+    <div className={styles.overlay} onClick={onClose} data-testid="modal-overlay">
       <div className={styles.content} onClick={(e) => e.stopPropagation()}>
         <div className={styles.iconWrap}>
           <Crown size={44} color="white" />

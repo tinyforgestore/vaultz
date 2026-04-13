@@ -24,7 +24,7 @@ export default function ActivateLicenseModal({
   });
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
+    <div className={styles.overlay} onClick={onClose} data-testid="modal-overlay">
       <div className={styles.content} onClick={(e) => e.stopPropagation()}>
         <h2 className={styles.heading}>Activate Pro License</h2>
 

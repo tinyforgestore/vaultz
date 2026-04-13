@@ -14,23 +14,11 @@ import {
   filteredPasswordsAtom,
 } from './atoms';
 import { SPECIAL_FOLDERS } from '@/constants/folders';
-import type { Password } from '@/types';
+import { makePassword } from '@/testUtils';
 
 function store() {
   return createStore();
 }
-
-const makePassword = (overrides: Partial<Password> = {}): Password => ({
-  id: 'p1',
-  name: 'GitHub',
-  username: 'user',
-  password: 'secret',
-  isFavorite: false,
-  folderId: 'f1',
-  createdAt: new Date(),
-  updatedAt: new Date(),
-  ...overrides,
-});
 
 describe('base atoms — initial values', () => {
   it('selectedFolderAtom defaults to ALL', () => {

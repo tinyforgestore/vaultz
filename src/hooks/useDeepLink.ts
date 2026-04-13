@@ -7,7 +7,7 @@ function parseLicenseKey(urls: string[]): string | null {
   for (const raw of urls) {
     try {
       const url = new URL(raw);
-      if (url.protocol === 'vaultz:' && url.pathname.replace(/^\//, '') === 'activate') {
+      if (url.protocol === 'vaultz:' && url.hostname === 'activate') {
         const key = url.searchParams.get('license_key');
         if (key) return key;
       }

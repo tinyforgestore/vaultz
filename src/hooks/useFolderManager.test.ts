@@ -4,19 +4,10 @@ import { act } from '@testing-library/react';
 vi.mock('@tauri-apps/api/core');
 
 import { invoke } from '@tauri-apps/api/core';
-import { renderHookWithProviders } from '@/testUtils';
+import { renderHookWithProviders, makeFolder } from '@/testUtils';
 import { useFolderManager } from './useFolderManager';
-import type { Folder } from '@/types';
 
 const mockInvoke = vi.mocked(invoke);
-
-const makeFolder = (id: string, name = `Folder ${id}`): Folder => ({
-  id,
-  name,
-  icon: 'folder',
-  isDefault: false,
-  createdAt: new Date(),
-});
 
 describe('useFolderManager', () => {
   describe('handleAddFolder', () => {
@@ -62,7 +53,7 @@ describe('useFolderManager', () => {
 
   describe('confirmCreateFolder', () => {
     it('calls invoke and closes modal on success', async () => {
-      const newFolder = makeFolder('f99', 'New');
+      const newFolder = makeFolder({ id: 'f99', name: 'New' });
       mockInvoke.mockResolvedValueOnce({ ...newFolder, createdAt: newFolder.createdAt.toISOString() });
       const { result } = renderHookWithProviders(() => useFolderManager());
       act(() => result.current.setIsCreateFolderOpen(true));
@@ -96,7 +87,7 @@ describe('useFolderManager', () => {
     it('returns all folders when filter is empty', async () => {
       const { store } = renderHookWithProviders(() => useFolderManager());
       const { foldersAtom } = await import('@/store/atoms');
-      store.set(foldersAtom, [makeFolder('f1', 'Work'), makeFolder('f2', 'Personal')]);
+      store.set(foldersAtom, [makeFolder({ id: 'f1', name: 'Work' }), makeFolder({ id: 'f2', name: 'Personal' })]);
       const { result } = renderHookWithProviders(() => useFolderManager(), { store });
       expect(result.current.filteredFolders).toHaveLength(2);
     });
@@ -104,7 +95,7 @@ describe('useFolderManager', () => {
     it('filters folders case-insensitively', async () => {
       const { store } = renderHookWithProviders(() => useFolderManager());
       const { foldersAtom } = await import('@/store/atoms');
-      store.set(foldersAtom, [makeFolder('f1', 'Work'), makeFolder('f2', 'Personal')]);
+      store.set(foldersAtom, [makeFolder({ id: 'f1', name: 'Work' }), makeFolder({ id: 'f2', name: 'Personal' })]);
       const { result } = renderHookWithProviders(() => useFolderManager(), { store });
       act(() => result.current.setFolderFilter('WORK'));
       expect(result.current.filteredFolders).toHaveLength(1);
@@ -114,7 +105,7 @@ describe('useFolderManager', () => {
     it('returns empty array when no folders match', async () => {
       const { store } = renderHookWithProviders(() => useFolderManager());
       const { foldersAtom } = await import('@/store/atoms');
-      store.set(foldersAtom, [makeFolder('f1', 'Work')]);
+      store.set(foldersAtom, [makeFolder({ id: 'f1', name: 'Work' })]);
       const { result } = renderHookWithProviders(() => useFolderManager(), { store });
       act(() => result.current.setFolderFilter('zzz'));
       expect(result.current.filteredFolders).toHaveLength(0);
@@ -123,14 +114,14 @@ describe('useFolderManager', () => {
 
   describe('handleEditFolder / confirmEditFolder', () => {
     it('sets editingFolder when handleEditFolder is called', () => {
-      const folder = makeFolder('f1', 'Work');
+      const folder = makeFolder({ id: 'f1', name: 'Work' });
       const { result } = renderHookWithProviders(() => useFolderManager());
       act(() => result.current.handleEditFolder(folder));
       expect(result.current.editingFolder).toEqual(folder);
     });
 
     it('clears editingFolder when handleCancelEdit is called', () => {
-      const folder = makeFolder('f1', 'Work');
+      const folder = makeFolder({ id: 'f1', name: 'Work' });
       const { result } = renderHookWithProviders(() => useFolderManager());
       act(() => result.current.handleEditFolder(folder));
       act(() => result.current.handleCancelEdit());
@@ -138,7 +129,7 @@ describe('useFolderManager', () => {
     });
 
     it('calls invoke and clears editingFolder on success', async () => {
-      const folder = makeFolder('f1', 'Work');
+      const folder = makeFolder({ id: 'f1', name: 'Work' });
       const updated = { ...folder, name: 'Updated', createdAt: folder.createdAt.toISOString() };
       mockInvoke.mockResolvedValueOnce(updated);
       const { result } = renderHookWithProviders(() => useFolderManager());
@@ -162,7 +153,7 @@ describe('useFolderManager', () => {
     it('returns the folder name when found', async () => {
       const { store } = renderHookWithProviders(() => useFolderManager());
       const { foldersAtom } = await import('@/store/atoms');
-      store.set(foldersAtom, [makeFolder('f1', 'Work')]);
+      store.set(foldersAtom, [makeFolder({ id: 'f1', name: 'Work' })]);
       const { result } = renderHookWithProviders(() => useFolderManager(), { store });
       act(() => result.current.handleDeleteFolder('f1'));
       expect(result.current.deleteFolderName).toBe('Work');

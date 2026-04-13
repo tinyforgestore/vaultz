@@ -21,6 +21,7 @@ export default defineConfig({
         'src/styles/**',
         'src/types/**',
         '**/.DS_Store',
+        '**/*.css.ts',
       ],
     },
   },
@@ -29,4 +30,20 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  plugins: [
+    {
+      name: 'mock-css-ts',
+      enforce: 'pre',
+      transform(_code, id) {
+        if (id.endsWith('.css.ts')) {
+          return { code: 'export default {}', map: null };
+        }
+      },
+      resolveId(id) {
+        if (id.endsWith('.css.ts') || id.endsWith('.css')) {
+          return null;
+        }
+      },
+    },
+  ],
 });

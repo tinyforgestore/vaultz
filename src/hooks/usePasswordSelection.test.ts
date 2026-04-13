@@ -3,22 +3,10 @@ import { act } from '@testing-library/react';
 
 vi.mock('@tauri-apps/api/core');
 
-import { renderHookWithProviders } from '@/testUtils';
+import { renderHookWithProviders, makePassword } from '@/testUtils';
 import { usePasswordSelection } from './usePasswordSelection';
-import type { Password } from '@/types';
 
-const makePassword = (id: string): Password => ({
-  id,
-  name: `Password ${id}`,
-  username: 'user',
-  password: 'secret',
-  isFavorite: false,
-  folderId: 'f1',
-  createdAt: new Date(),
-  updatedAt: new Date(),
-});
-
-const passwords = [makePassword('p1'), makePassword('p2'), makePassword('p3')];
+const passwords = [makePassword({ id: 'p1' }), makePassword({ id: 'p2' }), makePassword({ id: 'p3' })];
 
 function setup(pws = passwords) {
   return renderHookWithProviders(() => usePasswordSelection(pws));
