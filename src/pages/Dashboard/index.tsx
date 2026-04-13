@@ -71,13 +71,13 @@ export default function Dashboard() {
                 <span className={styles.brandName}>Vault</span>
               </Flex>
               <Flex gap="1">
-                <IconButton size="1" variant={isSelectionMode ? 'solid' : 'ghost'} onClick={toggleSelectionMode}>
+                <IconButton size="1" variant={isSelectionMode ? 'solid' : 'ghost'} onClick={toggleSelectionMode} aria-label="Toggle selection mode">
                   <CheckSquare size={14} />
                 </IconButton>
-                <IconButton size="1" variant="ghost" onClick={handleSettingsClick}>
+                <IconButton size="1" variant="ghost" onClick={handleSettingsClick} aria-label="Settings">
                   <Settings size={14} />
                 </IconButton>
-                <IconButton size="1" variant="ghost" color="red" onClick={handleLogout}>
+                <IconButton size="1" variant="ghost" color="red" onClick={handleLogout} aria-label="Log out">
                   <LogOut size={14} />
                 </IconButton>
               </Flex>
@@ -183,7 +183,7 @@ export default function Dashboard() {
             </Box>
           ) : (
             <Box className={styles.floatingButtonContainer}>
-              <IconButton size="3" radius="full" onClick={handleCreatePassword} className={styles.floatingButton}>
+              <IconButton size="3" radius="full" onClick={handleCreatePassword} className={styles.floatingButton} aria-label="Add password">
                 <Plus size={20} />
               </IconButton>
             </Box>

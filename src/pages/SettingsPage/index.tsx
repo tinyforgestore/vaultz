@@ -51,7 +51,7 @@ export default function SettingsPage() {
   return (
     <div className={styles.container}>
       <div className={styles.header} data-tauri-drag-region>
-        <IconButton size="1" variant="ghost" onClick={handleBack}>
+        <IconButton size="1" variant="ghost" onClick={handleBack} aria-label="Go back">
           <ArrowLeft size={16} />
         </IconButton>
         <span className={styles.headerTitle}>Settings</span>
@@ -133,10 +133,10 @@ export default function SettingsPage() {
                         <Box>{folder.name}</Box>
                       </Flex>
                       <Flex gap="1">
-                        <IconButton size="1" variant="ghost" onClick={() => handleEditFolder(folder)}>
+                        <IconButton size="1" variant="ghost" aria-label={`Edit ${folder.name}`} onClick={() => handleEditFolder(folder)}>
                           <Pencil size={14} />
                         </IconButton>
-                        <IconButton size="1" variant="ghost" color="red" onClick={() => handleDeleteFolder(folder.id)}>
+                        <IconButton size="1" variant="ghost" color="red" aria-label={`Delete ${folder.name}`} onClick={() => handleDeleteFolder(folder.id)}>
                           <Trash2 size={14} />
                         </IconButton>
                       </Flex>

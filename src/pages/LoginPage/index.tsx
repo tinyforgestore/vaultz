@@ -129,6 +129,7 @@ export default function LoginPage() {
             />
             <button
               type="button"
+              aria-label="Toggle password visibility"
               className={styles.eyeToggle}
               onClick={() => setShowMasterPassword(s => !s)}
               tabIndex={-1}

@@ -44,11 +44,11 @@ export default function PasswordDetailsPage() {
   return (
     <Box className={styles.container}>
       <div className={styles.header} data-tauri-drag-region>
-        <IconButton size="1" variant="ghost" onClick={handleBack}>
+        <IconButton size="1" variant="ghost" onClick={handleBack} aria-label="Go back">
           <ArrowLeft size={16} />
         </IconButton>
         <span className={styles.headerTitle}>{password.name}</span>
-        <IconButton size="1" variant="ghost" onClick={handleToggleFavorite} className={styles.favoriteButton}>
+        <IconButton size="1" variant="ghost" onClick={handleToggleFavorite} className={styles.favoriteButton} aria-label="Toggle favorite">
           <Star size={15} fill={password.isFavorite ? 'currentColor' : 'none'} />
         </IconButton>
         <Button size="1" variant="soft" onClick={handleEdit}>Edit</Button>
@@ -78,7 +78,7 @@ export default function PasswordDetailsPage() {
               <span>User / Email</span>
             </Flex>
             {userField && (
-              <IconButton size="1" variant="ghost" onClick={() => copyField('username', userField)}>
+              <IconButton size="1" variant="ghost" aria-label="Copy username" onClick={() => copyField('username', userField)}>
                 {copiedField === 'username' ? <Check size={12} /> : <Copy size={12} />}
               </IconButton>
             )}
@@ -95,10 +95,10 @@ export default function PasswordDetailsPage() {
               <span>Password</span>
             </Flex>
             <Flex align="center" gap="1">
-              <IconButton size="1" variant="ghost" onClick={() => setShowPassword(!showPassword)}>
+              <IconButton size="1" variant="ghost" aria-label="Toggle password visibility" onClick={() => setShowPassword(!showPassword)}>
                 {showPassword ? <EyeOff size={12} /> : <Eye size={12} />}
               </IconButton>
-              <IconButton size="1" variant="ghost" onClick={() => copyField('password', password.password)}>
+              <IconButton size="1" variant="ghost" aria-label="Copy password" onClick={() => copyField('password', password.password)}>
                 {copiedField === 'password' ? <Check size={12} /> : <Copy size={12} />}
               </IconButton>
             </Flex>
@@ -117,7 +117,7 @@ export default function PasswordDetailsPage() {
               <span>Website</span>
             </Flex>
             {password.website && (
-              <IconButton size="1" variant="ghost" onClick={() => copyField('website', password.website!)}>
+              <IconButton size="1" variant="ghost" aria-label="Copy website" onClick={() => copyField('website', password.website!)}>
                 {copiedField === 'website' ? <Check size={12} /> : <Copy size={12} />}
               </IconButton>
             )}
@@ -146,7 +146,7 @@ export default function PasswordDetailsPage() {
                 <User size={13} />
                 <span>Recovery Email</span>
               </Flex>
-              <IconButton size="1" variant="ghost" onClick={() => copyField('recovery', password.recoveryEmail!)}>
+              <IconButton size="1" variant="ghost" aria-label="Copy recovery email" onClick={() => copyField('recovery', password.recoveryEmail!)}>
                 {copiedField === 'recovery' ? <Check size={12} /> : <Copy size={12} />}
               </IconButton>
             </Flex>
