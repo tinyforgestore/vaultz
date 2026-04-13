@@ -32,6 +32,8 @@ jobs:
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
 
       - name: Install Linux system dependencies
         run: |
@@ -47,16 +49,10 @@ jobs:
             libayatana-appindicator3-dev \
             librsvg2-dev
 
-      - name: Cache cargo-tarpaulin binary
-        id: cache-tarpaulin
-        uses: actions/cache@v4
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@v2
         with:
-          path: ~/.cargo/bin/cargo-tarpaulin
-          key: ${{ runner.os }}-tarpaulin-0.31.2
-
-      - name: Install cargo-tarpaulin
-        if: steps.cache-tarpaulin.outputs.cache-hit != 'true'
-        run: cargo install cargo-tarpaulin --version 0.31.2 --locked
+          tool: cargo-llvm-cov
 
       - name: Install Node dependencies
         run: pnpm install --frozen-lockfile
@@ -64,33 +60,17 @@ jobs:
       - name: Run TypeScript coverage
         run: pnpm vitest run --coverage
 
-      - name: Verify TypeScript coverage output
-        run: |
-          echo "=== coverage/ contents ==="
-          ls -la coverage/ || echo "directory not found"
-          echo "=== coverage-summary.json (first 200 chars) ==="
-          head -c 200 coverage/coverage-summary.json || echo "file not found"
-
       - name: Run Rust coverage
-        working-directory: src-tauri
-        run: cargo tarpaulin --out Json
-
-      - name: Verify Rust coverage output
-        run: |
-          echo "=== src-tauri/ tarpaulin output ==="
-          ls -la src-tauri/tarpaulin-report.json || echo "file not found"
-          echo "=== tarpaulin-report.json (first 200 chars) ==="
-          head -c 200 src-tauri/tarpaulin-report.json || echo "file not found"
+        run: cargo llvm-cov --json --output-path rust-coverage.json --manifest-path src-tauri/Cargo.toml
 
       - name: Write coverage.json
         run: |
           node -e "
             const fs = require('fs');
-            const ts = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8'));
-            const raw = fs.readFileSync('src-tauri/tarpaulin-report.json', 'utf8');
-            const rust = JSON.parse(raw.slice(raw.indexOf('{')));
+            const ts   = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8'));
+            const rust = JSON.parse(fs.readFileSync('rust-coverage.json', 'utf8'));
             const tsPct   = parseFloat(ts.total.lines.pct.toFixed(1));
-            const rustPct = parseFloat((rust.coverage * 100).toFixed(1));
+            const rustPct = parseFloat(rust.data[0].totals.lines.percent.toFixed(1));
             const total   = parseFloat(((tsPct + rustPct) / 2).toFixed(1));
             fs.writeFileSync('coverage.json', JSON.stringify({ ts: tsPct, rust: rustPct, total }));
             console.log('TS: ' + tsPct + '%  Rust: ' + rustPct + '%  Total: ' + total + '%');
