@@ -64,11 +64,25 @@ jobs:
       - name: Run TypeScript coverage
         run: pnpm vitest run --coverage
 
+      - name: Verify TypeScript coverage output
+        run: |
+          echo "=== coverage/ contents ==="
+          ls -la coverage/ || echo "directory not found"
+          echo "=== coverage-summary.json (first 200 chars) ==="
+          head -c 200 coverage/coverage-summary.json || echo "file not found"
+
       - name: Run Rust coverage
         working-directory: src-tauri
         run: |
           mkdir -p coverage
           cargo tarpaulin --out Json > coverage/tarpaulin-report.json 2>&1
+
+      - name: Verify Rust coverage output
+        run: |
+          echo "=== src-tauri/coverage/ contents ==="
+          ls -la src-tauri/coverage/ || echo "directory not found"
+          echo "=== tarpaulin-report.json (first 200 chars) ==="
+          head -c 200 src-tauri/coverage/tarpaulin-report.json || echo "file not found"
 
       - name: Write coverage.json
         run: |
