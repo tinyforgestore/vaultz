@@ -15,7 +15,13 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json-summary'],
       include: ['src/**'],
-      exclude: ['src/test/**', '**/.DS_Store'],
+      exclude: [
+        'src/test/**',
+        'src/assets/**',
+        'src/styles/**',
+        'src/types/**',
+        '**/.DS_Store',
+      ],
     },
   },
   resolve: {

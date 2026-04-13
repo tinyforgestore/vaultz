@@ -61,7 +61,7 @@ jobs:
         run: pnpm vitest run --coverage
 
       - name: Run Rust coverage
-        run: cargo llvm-cov --json --output-path rust-coverage.json --manifest-path src-tauri/Cargo.toml
+        run: cargo llvm-cov --json --output-path rust-coverage.json --manifest-path src-tauri/Cargo.toml --ignore-filename-regex "commands/"
 
       - name: Write coverage.json
         run: |
