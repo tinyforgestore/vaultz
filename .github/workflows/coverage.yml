@@ -66,7 +66,9 @@ jobs:
 
       - name: Run Rust coverage
         working-directory: src-tauri
-        run: cargo tarpaulin --out Json --output-dir coverage
+        run: |
+          mkdir -p coverage
+          cargo tarpaulin --out Json > coverage/tarpaulin-report.json
 
       - name: Write coverage.json
         run: |
