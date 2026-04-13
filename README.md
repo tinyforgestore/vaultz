@@ -4,7 +4,7 @@
 
   [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
   ![Platform](https://img.shields.io/badge/platform-macOS%20·%20Windows%20·%20Linux-lightgrey)
-  [![Coverage](https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/tinyforgestore/vaultz/main/coverage.json&query=$.total&suffix=%25&label=coverage&color=brightgreen)](coverage.json)
+  [![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/tinyforgestore/vaultz/main/coverage.json)](coverage.json)
 
   **A password manager that doesn't phone home.**
 

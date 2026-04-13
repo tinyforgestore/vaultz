@@ -72,8 +72,14 @@ jobs:
             const tsPct   = parseFloat(ts.total.lines.pct.toFixed(1));
             const rustPct = parseFloat(rust.data[0].totals.lines.percent.toFixed(1));
             const total   = parseFloat(((tsPct + rustPct) / 2).toFixed(1));
-            fs.writeFileSync('coverage.json', JSON.stringify({ ts: tsPct, rust: rustPct, total }));
-            console.log('TS: ' + tsPct + '%  Rust: ' + rustPct + '%  Total: ' + total + '%');
+            const color = total >= 90 ? 'brightgreen' : total >= 70 ? 'green' : total >= 50 ? 'yellow' : 'red';
+            fs.writeFileSync('coverage.json', JSON.stringify({
+              schemaVersion: 1,
+              label: 'coverage',
+              message: total + '%',
+              color,
+            }));
+            console.log('TS: ' + tsPct + '%  Rust: ' + rustPct + '%  Total: ' + total + '%  Color: ' + color);
           "
 
       - name: Commit and push coverage.json
