@@ -68,7 +68,7 @@ jobs:
         working-directory: src-tauri
         run: |
           mkdir -p coverage
-          cargo tarpaulin --out Json > coverage/tarpaulin-report.json
+          cargo tarpaulin --out Json > coverage/tarpaulin-report.json 2>&1
 
       - name: Write coverage.json
         run: |
