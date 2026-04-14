@@ -6,7 +6,7 @@ use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 use password_hash::rand_core::{OsRng, RngCore};
 
 use crate::crypto::{derive_field_key, encrypt_field, verify_password_hash, ENC_PREFIX};
-use crate::state::{with_db, DbState, LOCK_TIMEOUT, SessionState};
+use crate::state::{db_minutes_to_secs, with_db, DbState, SessionState};
 
 fn load_or_create_salt(db_state: &State<DbState>, password: &[u8]) -> Result<[u8; 32], String> {
     let mut fresh_salt = [0u8; 16];
@@ -73,10 +73,20 @@ pub fn login(
         let field_key = load_or_create_salt(&db_state, password.as_bytes())?;
         migrate_encrypt_passwords(&db_state, &field_key)?;
 
+        let timeout_result = with_db(&db_state, |db| {
+            db.get_lock_timeout().map_err(|e| e.to_string())
+        });
+        let lock_timeout_secs = match timeout_result {
+            Ok(Some(minutes)) => db_minutes_to_secs(Some(minutes)),
+            Ok(None) => 0, // user chose "Never"
+            Err(_) => crate::state::DEFAULT_LOCK_TIMEOUT_SECS, // DB error → safe default
+        };
+
         let mut session = state.lock().unwrap();
         session.is_authenticated = true;
         session.field_key = Some(field_key);
         session.last_activity = Some(SystemTime::now());
+        session.lock_timeout_secs = lock_timeout_secs;
     }
 
     Ok(is_valid)
@@ -103,9 +113,14 @@ pub fn update_activity(state: State<Mutex<SessionState>>) {
 #[tauri::command]
 pub fn check_session_timeout(state: State<Mutex<SessionState>>) -> bool {
     let mut session = state.lock().unwrap();
+    // lock_timeout_secs == 0 means "never lock"
+    if session.lock_timeout_secs == 0 {
+        return false;
+    }
+    let timeout = std::time::Duration::from_secs(session.lock_timeout_secs);
     if let Some(last_activity) = session.last_activity {
         if let Ok(elapsed) = SystemTime::now().duration_since(last_activity) {
-            if elapsed > LOCK_TIMEOUT {
+            if elapsed > timeout {
                 session.clear();
                 return true;
             }
@@ -123,14 +138,18 @@ mod tests {
     use crate::crypto::{decrypt_field, derive_field_key, encrypt_field, hash_password, verify_password_hash, ENC_PREFIX};
     use crate::database::test_helpers::in_memory_db;
     use crate::database::CreatePasswordInput;
-    use crate::state::{SessionState, LOCK_TIMEOUT};
+    use crate::state::{SessionState, DEFAULT_LOCK_TIMEOUT_SECS};
 
     // --- Session timeout logic (mirrors check_session_timeout) ---
 
     fn is_timed_out(session: &mut SessionState) -> bool {
+        if session.lock_timeout_secs == 0 {
+            return false;
+        }
+        let timeout = Duration::from_secs(session.lock_timeout_secs);
         if let Some(last_activity) = session.last_activity {
             if let Ok(elapsed) = SystemTime::now().duration_since(last_activity) {
-                if elapsed > LOCK_TIMEOUT {
+                if elapsed > timeout {
                     session.clear();
                     return true;
                 }
@@ -141,10 +160,12 @@ mod tests {
 
     #[test]
     fn timeout_clears_session_when_expired() {
+        let lock_timeout = Duration::from_secs(DEFAULT_LOCK_TIMEOUT_SECS);
         let mut session = SessionState {
             is_authenticated: true,
             field_key: Some([1u8; 32]),
-            last_activity: Some(SystemTime::now() - LOCK_TIMEOUT - Duration::from_secs(1)),
+            last_activity: Some(SystemTime::now() - lock_timeout - Duration::from_secs(1)),
+            lock_timeout_secs: DEFAULT_LOCK_TIMEOUT_SECS,
         };
         assert!(is_timed_out(&mut session));
         assert!(!session.is_authenticated);
@@ -157,6 +178,7 @@ mod tests {
             is_authenticated: true,
             field_key: Some([1u8; 32]),
             last_activity: Some(SystemTime::now()),
+            lock_timeout_secs: DEFAULT_LOCK_TIMEOUT_SECS,
         };
         assert!(!is_timed_out(&mut session));
         assert!(session.is_authenticated);
@@ -166,6 +188,19 @@ mod tests {
     fn timeout_returns_false_when_no_activity() {
         let mut session = SessionState::default();
         assert!(!is_timed_out(&mut session));
+    }
+
+    #[test]
+    fn timeout_returns_false_when_lock_timeout_secs_is_zero() {
+        let mut session = SessionState {
+            is_authenticated: true,
+            field_key: Some([1u8; 32]),
+            // Activity set to far in the past — should still not time out
+            last_activity: Some(SystemTime::now() - Duration::from_secs(99999)),
+            lock_timeout_secs: 0,
+        };
+        assert!(!is_timed_out(&mut session));
+        assert!(session.is_authenticated);
     }
 
     // --- load_or_create_salt logic (mirrors the DB helper) ---

@@ -5,6 +5,7 @@ mod folders;
 mod license;
 mod master;
 mod passwords;
+mod settings;
 pub mod models;
 
 pub use models::*;
@@ -48,6 +49,11 @@ CREATE TABLE IF NOT EXISTS license (
     id INTEGER PRIMARY KEY CHECK (id = 1),
     license_key TEXT NOT NULL,
     license_validated_at INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS settings (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    lock_timeout_minutes INTEGER
 );
 ";
 
@@ -112,6 +118,19 @@ impl Database {
                     id INTEGER PRIMARY KEY CHECK (id = 1),
                     license_key TEXT NOT NULL,
                     license_validated_at INTEGER
+                );",
+            )?;
+        }
+
+        let has_settings_table: bool = self
+            .conn
+            .prepare("SELECT id FROM settings LIMIT 0")
+            .is_ok();
+        if !has_settings_table {
+            self.conn.execute_batch(
+                "CREATE TABLE IF NOT EXISTS settings (
+                    id INTEGER PRIMARY KEY CHECK (id = 1),
+                    lock_timeout_minutes INTEGER
                 );",
             )?;
         }

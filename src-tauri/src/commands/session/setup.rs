@@ -7,7 +7,7 @@ use password_hash::rand_core::{OsRng, RngCore};
 
 use crate::crypto::{derive_field_key, hash_password};
 use crate::database::Database;
-use crate::state::{get_app_data_dir, DbState, SessionState};
+use crate::state::{db_minutes_to_secs, get_app_data_dir, DbState, SessionState};
 
 #[tauri::command]
 pub fn database_exists(app_handle: AppHandle) -> bool {
@@ -45,12 +45,19 @@ pub fn initialize_database(
     db.create_folder("Work", "briefcase", true).map_err(|e| e.to_string())?;
     db.create_folder("Personal", "user", true).map_err(|e| e.to_string())?;
 
+    let timeout_secs = match db.get_lock_timeout() {
+        Ok(Some(minutes)) => db_minutes_to_secs(Some(minutes)),
+        Ok(None) => 0, // user chose "Never"
+        Err(_) => crate::state::DEFAULT_LOCK_TIMEOUT_SECS, // DB error → safe default
+    };
+
     *db_state.lock().unwrap() = Some(db);
 
     let mut session = session_state.lock().unwrap();
     session.is_authenticated = true;
     session.field_key = Some(field_key);
     session.last_activity = Some(SystemTime::now());
+    session.lock_timeout_secs = timeout_secs;
 
     Ok(())
 }

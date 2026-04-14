@@ -1,14 +1,53 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, act, waitFor } from '@testing-library/react';
+import { render, screen, act, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { Provider, createStore } from 'jotai';
+import { Theme } from '@radix-ui/themes';
 
 vi.mock('@tauri-apps/api/core');
 vi.mock('@tauri-apps/plugin-dialog', () => ({ save: vi.fn() }));
 vi.mock('@/services/sessionService', () => ({
   sessionService: { logout: vi.fn() },
 }));
+
+// Radix UI Select doesn't work well in jsdom (missing hasPointerCapture / scrollIntoView).
+// Replace Select.Root with a native <select> so onValueChange tests work without those APIs.
+vi.mock('@radix-ui/themes', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@radix-ui/themes')>();
+  const React = await import('react');
+  type SelectRootProps = {
+    value?: string;
+    onValueChange?: (value: string) => void;
+    children?: React.ReactNode;
+  };
+  type SelectItemProps = { value: string; children?: React.ReactNode };
+  const MockSelectRoot = ({ value, onValueChange, children }: SelectRootProps) =>
+    React.createElement(
+      'select',
+      {
+        'aria-label': 'Lock screen timeout',
+        role: 'combobox',
+        value: value ?? '',
+        onChange: (e: React.ChangeEvent<HTMLSelectElement>) => onValueChange?.(e.target.value),
+      },
+      children,
+    );
+  const MockSelectTrigger = () => null;
+  const MockSelectContent = ({ children }: { children?: React.ReactNode }) =>
+    React.createElement(React.Fragment, null, children);
+  const MockSelectItem = ({ value, children }: SelectItemProps) =>
+    React.createElement('option', { value }, children);
+  return {
+    ...actual,
+    Select: {
+      Root: MockSelectRoot,
+      Trigger: MockSelectTrigger,
+      Content: MockSelectContent,
+      Item: MockSelectItem,
+    },
+  };
+});
 
 import { invoke } from '@tauri-apps/api/core';
 import { save as mockSaveImport } from '@tauri-apps/plugin-dialog';
@@ -32,16 +71,20 @@ function renderSettings(folders: Folder[] = [], isPro = false) {
     if (cmd === 'get_license_status') return Promise.resolve(isPro ? { is_active: true } : null);
     if (cmd === 'validate_license') return Promise.resolve(isPro ? true : false);
     if (cmd === 'get_passwords') return Promise.resolve([]);
+    if (cmd === 'get_lock_timeout') return Promise.resolve(5);
+    if (cmd === 'set_lock_timeout') return Promise.resolve(undefined);
     return Promise.resolve(undefined);
   });
   return {
     store,
     ...render(
-      <MemoryRouter>
-        <Provider store={store}>
-          <SettingsPage />
-        </Provider>
-      </MemoryRouter>
+      <Theme>
+        <MemoryRouter>
+          <Provider store={store}>
+            <SettingsPage />
+          </Provider>
+        </MemoryRouter>
+      </Theme>
     ),
   };
 }
@@ -202,18 +245,21 @@ describe('SettingsPage', () => {
       if (cmd === 'get_license_status') return Promise.resolve(null);
       if (cmd === 'validate_license') return Promise.resolve(false);
       if (cmd === 'get_passwords') return Promise.resolve([]);
+      if (cmd === 'get_lock_timeout') return Promise.resolve(5);
       return Promise.resolve(undefined);
     });
 
     render(
-      <MemoryRouter initialEntries={['/settings']}>
-        <Provider store={store}>
-          <Routes>
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/dashboard" element={<div>Dashboard</div>} />
-          </Routes>
-        </Provider>
-      </MemoryRouter>
+      <Theme>
+        <MemoryRouter initialEntries={['/settings']}>
+          <Provider store={store}>
+            <Routes>
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/dashboard" element={<div>Dashboard</div>} />
+            </Routes>
+          </Provider>
+        </MemoryRouter>
+      </Theme>
     );
 
     const backBtn = screen.getByRole('button', { name: /go back/i });
@@ -504,6 +550,77 @@ describe('SettingsPage', () => {
     await user.keyboard('{Escape}');
     await waitFor(() => {
       expect(screen.queryByText('Create New Folder')).not.toBeInTheDocument();
+    });
+  });
+
+  it('renders lock screen timeout dropdown in Security section', async () => {
+    renderSettings();
+    await act(async () => {});
+    expect(await screen.findByText('Lock screen timeout')).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: /Lock screen timeout/i })).toBeInTheDocument();
+  });
+
+  it('lock timeout dropdown shows the current value from get_lock_timeout', async () => {
+    // get_lock_timeout returns 5 → the trigger should display "5 minutes"
+    renderSettings();
+    await act(async () => {});
+
+    const trigger = await screen.findByRole('combobox', { name: /Lock screen timeout/i });
+    expect(trigger).toBeInTheDocument();
+    // The trigger text reflects the current value ("5 minutes")
+    expect(trigger).toHaveTextContent(/5 minutes/i);
+  });
+
+  it('lock timeout dropdown shows "Never" when get_lock_timeout returns null', async () => {
+    const store = createStore();
+    // Override mock BEFORE rendering so useEffect picks up null from get_lock_timeout
+    mockInvoke.mockImplementation((cmd: unknown) => {
+      if (cmd === 'get_lock_timeout') return Promise.resolve(null);
+      if (cmd === 'check_limit_status') return Promise.resolve({ passwords_at_limit: false, folders_at_limit: false });
+      if (cmd === 'get_license_status') return Promise.resolve(null);
+      if (cmd === 'validate_license') return Promise.resolve(false);
+      if (cmd === 'get_passwords') return Promise.resolve([]);
+      if (cmd === 'set_lock_timeout') return Promise.resolve(undefined);
+      return Promise.resolve(undefined);
+    });
+
+    render(
+      <Theme>
+        <MemoryRouter>
+          <Provider store={store}>
+            <SettingsPage />
+          </Provider>
+        </MemoryRouter>
+      </Theme>
+    );
+    await act(async () => {});
+
+    const trigger = await screen.findByRole('combobox', { name: /Lock screen timeout/i });
+    expect(trigger).toHaveTextContent(/Never/i);
+  });
+
+  it('selecting a lock timeout value calls invoke set_lock_timeout with the correct minutes', async () => {
+    renderSettings();
+    await act(async () => {});
+
+    // The Select is mocked as a native <select> so we can use fireEvent.change directly
+    const select = await screen.findByRole('combobox', { name: /Lock screen timeout/i });
+    fireEvent.change(select, { target: { value: '15' } });
+
+    await waitFor(() => {
+      expect(mockInvoke).toHaveBeenCalledWith('set_lock_timeout', { minutes: 15 });
+    });
+  });
+
+  it('selecting "Never" in lock timeout calls invoke set_lock_timeout with null', async () => {
+    renderSettings();
+    await act(async () => {});
+
+    const select = await screen.findByRole('combobox', { name: /Lock screen timeout/i });
+    fireEvent.change(select, { target: { value: 'never' } });
+
+    await waitFor(() => {
+      expect(mockInvoke).toHaveBeenCalledWith('set_lock_timeout', { minutes: null });
     });
   });
 

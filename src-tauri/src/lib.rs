@@ -68,6 +68,8 @@ pub fn run() {
             commands::license::validate_license,
             commands::license::get_license_status,
             commands::license::check_limit_status,
+            commands::settings::get_lock_timeout,
+            commands::settings::set_lock_timeout,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

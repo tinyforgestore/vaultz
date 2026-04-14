@@ -22,6 +22,70 @@ describe('useSettings', () => {
     mockInvoke.mockClear();
     mockInvoke.mockResolvedValue(null);
   });
+
+  describe('lockTimeout', () => {
+    it('calls get_lock_timeout on mount and sets lockTimeout state', async () => {
+      mockInvoke.mockImplementation((cmd: string) =>
+        cmd === 'get_lock_timeout' ? Promise.resolve(15) : Promise.resolve(null)
+      );
+      const { result } = setup();
+      await act(async () => {});
+      expect(mockInvoke).toHaveBeenCalledWith('get_lock_timeout');
+      expect(result.current.lockTimeout).toBe(15);
+    });
+
+    it('sets lockTimeout to null when get_lock_timeout returns null (Never)', async () => {
+      mockInvoke.mockImplementation((cmd: string) =>
+        cmd === 'get_lock_timeout' ? Promise.resolve(null) : Promise.resolve(null)
+      );
+      const { result } = setup();
+      await act(async () => {});
+      expect(result.current.lockTimeout).toBeNull();
+    });
+
+    it('handleSetLockTimeout calls set_lock_timeout and updates state', async () => {
+      mockInvoke.mockImplementation((cmd: string) =>
+        cmd === 'set_lock_timeout' ? Promise.resolve(undefined) : Promise.resolve(null)
+      );
+      const { result } = setup();
+      await act(async () => result.current.handleSetLockTimeout(30));
+      expect(mockInvoke).toHaveBeenCalledWith('set_lock_timeout', { minutes: 30 });
+      expect(result.current.lockTimeout).toBe(30);
+      expect(result.current.lockTimeoutError).toBeNull();
+    });
+
+    it('handleSetLockTimeout with null sets lockTimeout to null (Never)', async () => {
+      mockInvoke.mockImplementation((cmd: string) =>
+        cmd === 'set_lock_timeout' ? Promise.resolve(undefined) : Promise.resolve(null)
+      );
+      const { result } = setup();
+      await act(async () => result.current.handleSetLockTimeout(null));
+      expect(mockInvoke).toHaveBeenCalledWith('set_lock_timeout', { minutes: null });
+      expect(result.current.lockTimeout).toBeNull();
+      expect(result.current.lockTimeoutError).toBeNull();
+    });
+
+    it('handleSetLockTimeout does not update lockTimeout when invoke rejects', async () => {
+      mockInvoke.mockImplementation((cmd: string) => {
+        if (cmd === 'get_lock_timeout') return Promise.resolve(15);
+        if (cmd === 'set_lock_timeout') return Promise.reject(new Error('DB error'));
+        return Promise.resolve(null);
+      });
+      const { result } = renderHookWithProviders(() => useSettings());
+      await act(async () => {}); // flush useEffect
+      await act(async () => { result.current.handleSetLockTimeout(30); });
+      await act(async () => {}); // flush promise
+      expect(result.current.lockTimeout).toBe(15);
+      expect(result.current.lockTimeoutError).toBe('Failed to save lock timeout');
+    });
+
+    it('lockTimeout stays null when get_lock_timeout fails on mount', async () => {
+      mockInvoke.mockRejectedValue(new Error('DB unavailable'));
+      const { result } = renderHookWithProviders(() => useSettings());
+      await act(async () => {});
+      expect(result.current.lockTimeout).toBeNull();
+    });
+  });
   describe('modal openers', () => {
     it('handleChangeMasterPassword opens modal', () => {
       const { result } = setup();

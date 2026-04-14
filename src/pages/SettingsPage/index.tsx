@@ -1,7 +1,7 @@
 import { Trash2, Pencil, Lock, Folder, ArrowLeft, Download, ShieldOff, Search, Crown } from 'lucide-react';
 import { version, homepage } from '../../../package.json';
 import tinyForgeLogo from '@/assets/tinyforge-logo.svg';
-import { Flex, Card, Button, Heading, Box, IconButton, TextField, Text } from '@radix-ui/themes';
+import { Flex, Card, Button, Heading, Box, IconButton, TextField, Text, Select } from '@radix-ui/themes';
 import ChangeMasterPasswordModal from '@/components/modals/ChangeMasterPasswordModal';
 import ExportVaultModal from '@/components/modals/ExportVaultModal';
 import CreateFolderModal from '@/components/modals/CreateFolderModal';
@@ -18,6 +18,8 @@ export default function SettingsPage() {
     isDestroyVaultOpen,
     isCreateFolderOpen,
     isDeleteFolderOpen,
+    lockTimeout,
+    lockTimeoutError,
     isPro,
     selectedFolder,
     editingFolder,
@@ -39,6 +41,7 @@ export default function SettingsPage() {
     handleEditFolder,
     handleCancelEdit,
     handleDeleteFolder,
+    handleSetLockTimeout,
     confirmChangeMasterPassword,
     confirmExportVault,
     confirmDestroyVault,
@@ -87,6 +90,29 @@ export default function SettingsPage() {
               >
                 Change Master Password
               </Button>
+              <Flex direction="column" gap="1">
+                <Flex align="center" justify="between" gap="2">
+                  <Text size="1" color="gray">Lock screen timeout</Text>
+                  <Select.Root
+                    size="1"
+                    value={lockTimeout === null ? 'never' : String(lockTimeout)}
+                    onValueChange={(val) => handleSetLockTimeout(val === 'never' ? null : Number(val))}
+                  >
+                    <Select.Trigger aria-label="Lock screen timeout" />
+                    <Select.Content>
+                      {/* Lock timeout options — must match ALLOWED_MINUTES in src-tauri/src/commands/settings.rs */}
+                      <Select.Item value="1">1 minute</Select.Item>
+                      <Select.Item value="5">5 minutes</Select.Item>
+                      <Select.Item value="15">15 minutes</Select.Item>
+                      <Select.Item value="30">30 minutes</Select.Item>
+                      <Select.Item value="never">Never</Select.Item>
+                    </Select.Content>
+                  </Select.Root>
+                </Flex>
+                {lockTimeoutError && (
+                  <Text size="1" color="red">{lockTimeoutError}</Text>
+                )}
+              </Flex>
             </Flex>
           </Card>
 

@@ -12,6 +12,8 @@ export function useSettings() {
   const [isChangeMasterPasswordOpen, setIsChangeMasterPasswordOpen] = useState(false);
   const [isExportVaultOpen, setIsExportVaultOpen] = useState(false);
   const [isDestroyVaultOpen, setIsDestroyVaultOpen] = useState(false);
+  const [lockTimeout, setLockTimeout] = useState<number | null>(null);
+  const [lockTimeoutError, setLockTimeoutError] = useState<string | null>(null);
   const setLicenseStatus = useSetAtom(licenseStatusAtom);
   const isPro = useAtomValue(isProAtom);
   const setActiveModal = useSetAtom(activeModalAtom);
@@ -30,7 +32,25 @@ export function useSettings() {
     invoke<boolean>('validate_license')
       .then((isActive) => setLicenseStatus({ is_active: isActive }))
       .catch(() => { /* keep status from above */ });
+
+    invoke<number | null>('get_lock_timeout')
+      .then((val) => setLockTimeout(val))
+      .catch(() => {
+        console.warn('get_lock_timeout: failed to load, keeping default');
+      });
   }, [setLicenseStatus]);
+
+  const handleSetLockTimeout = (minutes: number | null) => {
+    return invoke('set_lock_timeout', { minutes })
+      .then(() => {
+        setLockTimeoutError(null);
+        setLockTimeout(minutes);
+      })
+      .catch((err: unknown) => {
+        console.error('Error setting lock timeout:', err);
+        setLockTimeoutError('Failed to save lock timeout');
+      });
+  };
 
   const handleBack = () => navigate('/dashboard');
   const handleChangeMasterPassword = () => setIsChangeMasterPasswordOpen(true);
@@ -78,6 +98,8 @@ export function useSettings() {
     isChangeMasterPasswordOpen,
     isExportVaultOpen,
     isDestroyVaultOpen,
+    lockTimeout,
+    lockTimeoutError,
     isPro,
     setActiveModal,
     ...folderManager,
@@ -90,6 +112,7 @@ export function useSettings() {
     handleChangeMasterPassword,
     handleExportVault,
     handleDestroyVault,
+    handleSetLockTimeout,
     confirmChangeMasterPassword,
     confirmExportVault,
     confirmDestroyVault,
