@@ -1,6 +1,6 @@
 [package]
 name = "vaultz"
-version = "1.0.8"
+version = "1.0.9"
 description = "Local-first desktop password manager"
 authors = ["you"]
 edition = "2021"
