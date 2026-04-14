@@ -1,8 +1,11 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import PasswordGenerator from './index';
 
 describe('PasswordGenerator', () => {
+  afterEach(() => vi.clearAllMocks());
+
   it('renders without crashing (embedded mode)', () => {
     render(<PasswordGenerator onUsePassword={vi.fn()} onCancel={vi.fn()} isEmbedded />);
     expect(screen.getByText(/Length:/)).toBeInTheDocument();
@@ -39,5 +42,76 @@ describe('PasswordGenerator', () => {
     expect(input.value.length).toBeGreaterThan(0);
     // first value was also non-empty
     expect(firstPass.length).toBeGreaterThan(0);
+  });
+
+  it('displays default length label of 16', () => {
+    render(<PasswordGenerator onUsePassword={vi.fn()} onCancel={vi.fn()} isEmbedded />);
+    expect(screen.getByText('Length: 16')).toBeInTheDocument();
+  });
+
+  it('generated password is non-empty on initial render', () => {
+    render(<PasswordGenerator onUsePassword={vi.fn()} onCancel={vi.fn()} isEmbedded />);
+    const input = screen.getByRole('textbox') as HTMLInputElement;
+    expect(input.value.length).toBeGreaterThan(0);
+  });
+
+  it('generated password field is read-only', () => {
+    render(<PasswordGenerator onUsePassword={vi.fn()} onCancel={vi.fn()} isEmbedded />);
+    const input = screen.getByRole('textbox') as HTMLInputElement;
+    expect(input.readOnly).toBe(true);
+  });
+
+  it('"Use This Password" passes the exact displayed password value', () => {
+    const onUsePassword = vi.fn();
+    render(<PasswordGenerator onUsePassword={onUsePassword} onCancel={vi.fn()} isEmbedded />);
+    const input = screen.getByRole('textbox') as HTMLInputElement;
+    const displayed = input.value;
+    fireEvent.click(screen.getByText('Use This Password'));
+    expect(onUsePassword).toHaveBeenCalledWith(displayed);
+  });
+
+  it('toggling Uppercase checkbox changes its checked state', async () => {
+    const user = userEvent.setup();
+    render(<PasswordGenerator onUsePassword={vi.fn()} onCancel={vi.fn()} isEmbedded />);
+    const checkbox = screen.getByRole('checkbox', { name: /uppercase/i });
+    expect(checkbox).toHaveAttribute('data-state', 'checked');
+    await user.click(checkbox);
+    await waitFor(() => expect(checkbox).toHaveAttribute('data-state', 'unchecked'));
+  });
+
+  it('toggling Lowercase checkbox changes its checked state', async () => {
+    const user = userEvent.setup();
+    render(<PasswordGenerator onUsePassword={vi.fn()} onCancel={vi.fn()} isEmbedded />);
+    const checkbox = screen.getByRole('checkbox', { name: /lowercase/i });
+    expect(checkbox).toHaveAttribute('data-state', 'checked');
+    await user.click(checkbox);
+    await waitFor(() => expect(checkbox).toHaveAttribute('data-state', 'unchecked'));
+  });
+
+  it('toggling Numbers checkbox changes its checked state', async () => {
+    const user = userEvent.setup();
+    render(<PasswordGenerator onUsePassword={vi.fn()} onCancel={vi.fn()} isEmbedded />);
+    const checkbox = screen.getByRole('checkbox', { name: /numbers/i });
+    expect(checkbox).toHaveAttribute('data-state', 'checked');
+    await user.click(checkbox);
+    await waitFor(() => expect(checkbox).toHaveAttribute('data-state', 'unchecked'));
+  });
+
+  it('toggling Symbols checkbox changes its checked state', async () => {
+    const user = userEvent.setup();
+    render(<PasswordGenerator onUsePassword={vi.fn()} onCancel={vi.fn()} isEmbedded />);
+    const checkbox = screen.getByRole('checkbox', { name: /symbols/i });
+    expect(checkbox).toHaveAttribute('data-state', 'checked');
+    await user.click(checkbox);
+    await waitFor(() => expect(checkbox).toHaveAttribute('data-state', 'unchecked'));
+  });
+
+  it('pressing Escape in dialog mode calls onCancel', async () => {
+    const user = userEvent.setup();
+    const onCancel = vi.fn();
+    render(<PasswordGenerator onUsePassword={vi.fn()} onCancel={onCancel} />);
+    expect(screen.getByText('Generate Password')).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(onCancel).toHaveBeenCalledTimes(1));
   });
 });

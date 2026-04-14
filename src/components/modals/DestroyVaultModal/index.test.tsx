@@ -1,8 +1,10 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import DestroyVaultModal from './index';
 
 describe('DestroyVaultModal', () => {
+  afterEach(() => vi.clearAllMocks());
   it('renders the dialog title', () => {
     render(<DestroyVaultModal onConfirm={vi.fn()} onCancel={vi.fn()} />);
     expect(screen.getByText('Destroy Vault?')).toBeInTheDocument();
@@ -19,5 +21,13 @@ describe('DestroyVaultModal', () => {
     render(<DestroyVaultModal onConfirm={onConfirm} onCancel={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: /Destroy Vault/i }));
     expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls onCancel when Escape is pressed', async () => {
+    const user = userEvent.setup();
+    const onCancel = vi.fn();
+    render(<DestroyVaultModal onConfirm={vi.fn()} onCancel={onCancel} />);
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(onCancel).toHaveBeenCalledTimes(1));
   });
 });

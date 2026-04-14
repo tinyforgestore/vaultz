@@ -1,8 +1,10 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import DeleteFolderModal from './index';
 
 describe('DeleteFolderModal', () => {
+  afterEach(() => vi.clearAllMocks());
   it('renders the folder name', () => {
     render(<DeleteFolderModal folderName="Work" onConfirm={vi.fn()} onCancel={vi.fn()} />);
     expect(screen.getByText('Work')).toBeInTheDocument();
@@ -18,5 +20,13 @@ describe('DeleteFolderModal', () => {
   it('renders the warning message about passwords being moved', () => {
     render(<DeleteFolderModal folderName="Work" onConfirm={vi.fn()} onCancel={vi.fn()} />);
     expect(screen.getByText(/moved to the default folder/)).toBeInTheDocument();
+  });
+
+  it('calls onCancel when Escape is pressed', async () => {
+    const user = userEvent.setup();
+    const onCancel = vi.fn();
+    render(<DeleteFolderModal folderName="Work" onConfirm={vi.fn()} onCancel={onCancel} />);
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(onCancel).toHaveBeenCalledTimes(1));
   });
 });

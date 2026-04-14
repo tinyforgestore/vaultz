@@ -13,7 +13,7 @@ vi.mock('@/services/sessionService', () => ({
 import { invoke } from '@tauri-apps/api/core';
 import { save as mockSaveImport } from '@tauri-apps/plugin-dialog';
 import SettingsPage from './index';
-import { foldersAtom, licenseStatusAtom } from '@/store/atoms';
+import { foldersAtom, licenseStatusAtom, activeModalAtom } from '@/store/atoms';
 import { makeFolder } from '@/testUtils';
 import type { Folder } from '@/types';
 
@@ -453,6 +453,77 @@ describe('SettingsPage', () => {
 
     await waitFor(() => {
       expect(mockInvoke).toHaveBeenCalledWith('create_folder', { input: expect.objectContaining({ name: 'Test Folder' }) });
+    });
+  });
+
+  it('clicking Activate Pro License sets activeModal to activate', async () => {
+    const user = userEvent.setup();
+    const { store } = renderSettings([], false);
+
+    const activateBtn = await screen.findByRole('button', { name: /Activate Pro License/i });
+    await act(async () => {
+      await user.click(activateBtn);
+    });
+
+    expect(store.get(activeModalAtom)).toBe('activate');
+  });
+
+  it('Escape in ChangeMasterPasswordModal closes it', async () => {
+    const user = userEvent.setup();
+    renderSettings();
+
+    await user.click(screen.getByRole('button', { name: /Change Master Password/i }));
+    expect(await screen.findByText('Current Password *')).toBeInTheDocument();
+
+    await user.keyboard('{Escape}');
+    await waitFor(() => {
+      expect(screen.queryByText('Current Password *')).not.toBeInTheDocument();
+    });
+  });
+
+  it('Escape in ExportVaultModal closes it', async () => {
+    const user = userEvent.setup();
+    renderSettings();
+
+    await user.click(screen.getByRole('button', { name: /Export Vault/i }));
+    expect(await screen.findByText('Export Passphrase *')).toBeInTheDocument();
+
+    await user.keyboard('{Escape}');
+    await waitFor(() => {
+      expect(screen.queryByText('Export Passphrase *')).not.toBeInTheDocument();
+    });
+  });
+
+  it('Escape in CreateFolderModal (from Settings) closes it', async () => {
+    const user = userEvent.setup();
+    renderSettings();
+
+    await user.click(screen.getByRole('button', { name: /\+ Add New Folder/i }));
+    expect(await screen.findByText('Create New Folder')).toBeInTheDocument();
+
+    await user.keyboard('{Escape}');
+    await waitFor(() => {
+      expect(screen.queryByText('Create New Folder')).not.toBeInTheDocument();
+    });
+  });
+
+  it('Cancel in DeleteFolderModal closes the modal', async () => {
+    const user = userEvent.setup();
+    const folder = makeFolder({ id: 'f1', name: 'Work' });
+    renderSettings([folder]);
+
+    await screen.findByText('Work');
+
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /delete work/i }));
+    });
+    expect(await screen.findByText('Delete Folder?')).toBeInTheDocument();
+
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /^Cancel$/i }));
+    });
+    await waitFor(() => {
+      expect(screen.queryByText('Delete Folder?')).not.toBeInTheDocument();
     });
   });
 });

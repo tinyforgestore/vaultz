@@ -1,5 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import DeletePasswordModal from './index';
 
 describe('DeletePasswordModal', () => {
@@ -34,4 +35,14 @@ describe('DeletePasswordModal', () => {
     fireEvent.click(screen.getByRole('button', { name: /^Delete$/i }));
     expect(onConfirm).toHaveBeenCalledTimes(1);
   });
+
+  it('calls onCancel when Escape is pressed', async () => {
+    const user = userEvent.setup();
+    const onCancel = vi.fn();
+    render(<DeletePasswordModal passwordName="GitHub" onConfirm={vi.fn()} onCancel={onCancel} />);
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(onCancel).toHaveBeenCalledTimes(1));
+  });
+
+  afterEach(() => vi.clearAllMocks());
 });

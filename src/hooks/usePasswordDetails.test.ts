@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { act } from '@testing-library/react';
 
 vi.mock('@tauri-apps/api/core');
@@ -9,7 +9,7 @@ vi.mock('react-router-dom', async (importOriginal) => {
 
 import { renderHookWithProviders, makePassword, makeFolder } from '@/testUtils';
 import { usePasswordDetails } from './usePasswordDetails';
-import { allPasswordsAtom, foldersAtom } from '@/store/atoms';
+import { allPasswordsAtom, foldersAtom, favoriteAlertAtom } from '@/store/atoms';
 
 function setup(password = makePassword({ id: 'p1' })) {
   const { result, store } = renderHookWithProviders(() => usePasswordDetails());
@@ -21,6 +21,7 @@ function setup(password = makePassword({ id: 'p1' })) {
 }
 
 describe('usePasswordDetails', () => {
+  afterEach(() => vi.clearAllMocks());
   describe('derived state', () => {
     it('derives password from allPasswordsAtom via useParams id', () => {
       const { result } = setup();
@@ -91,6 +92,19 @@ describe('usePasswordDetails', () => {
       }));
       expect(result.current.isEditModalOpen).toBe(false);
     });
+
+    it('shows error toast when update_password rejects', async () => {
+      const { invoke } = await import('@tauri-apps/api/core');
+      const mockInvoke = vi.mocked(invoke);
+      mockInvoke.mockRejectedValueOnce(new Error('update failed'));
+      const { result } = setup();
+      act(() => result.current.setIsEditModalOpen(true));
+      await act(async () => result.current.confirmEdit({
+        serviceName: 'Updated', username: 'u', password: 'p', url: '', notes: '', folder: 'f1',
+      }));
+      expect(result.current.toastMessage).toBe('Failed to update password');
+      expect(result.current.toastVariant).toBe('error');
+    });
   });
 
   describe('confirmDelete', () => {
@@ -103,6 +117,35 @@ describe('usePasswordDetails', () => {
       await act(async () => result.current.confirmDelete());
       expect(mockInvoke).toHaveBeenCalledWith('delete_password', { id: 'p1' });
       expect(result.current.isDeleteModalOpen).toBe(false);
+    });
+  });
+
+  describe('handleToggleFavorite', () => {
+    it('calls toggleFavorite with the current passwordId', async () => {
+      const { invoke } = await import('@tauri-apps/api/core');
+      const mockInvoke = vi.mocked(invoke);
+      const pw = makePassword({ id: 'p1', isFavorite: false });
+      mockInvoke.mockResolvedValueOnce({
+        ...pw,
+        isFavorite: true,
+        createdAt: pw.createdAt.toISOString(),
+        updatedAt: pw.updatedAt.toISOString(),
+      });
+      const { result } = setup(pw);
+      await act(async () => result.current.handleToggleFavorite());
+      expect(mockInvoke).toHaveBeenCalledWith('update_password', expect.objectContaining({ id: 'p1' }));
+    });
+  });
+
+  describe('favoriteAlert effect', () => {
+    it('shows toast and clears favoriteAlert when it is set', async () => {
+      const { result, store } = setup();
+      await act(async () => {
+        store.set(favoriteAlertAtom, 'Max favorites reached');
+      });
+      expect(result.current.toastMessage).toBe('Max favorites reached');
+      expect(result.current.toastVariant).toBe('success');
+      expect(store.get(favoriteAlertAtom)).toBe('');
     });
   });
 });

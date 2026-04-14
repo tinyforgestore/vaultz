@@ -22,6 +22,7 @@ export default defineConfig({
         'src/types/**',
         '**/.DS_Store',
         '**/*.css.ts',
+        'src/constants/**',
         'src/main.tsx',
         'src/testUtils.tsx',
         'src/vite-env.d.ts',

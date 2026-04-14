@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { act } from '@testing-library/react';
 
 vi.mock('@tauri-apps/api/core');
@@ -15,8 +15,10 @@ import {
   foldersAtom,
   selectedFolderAtom,
   isAuthenticatedAtom,
+  activeModalAtom,
+  licenseStatusAtom,
 } from '@/store/atoms';
-import { SPECIAL_FOLDERS } from '@/constants/folders';
+import { SPECIAL_FOLDERS, LIMIT_REACHED_PASSWORDS, LIMIT_REACHED_FOLDERS } from '@/constants/folders';
 
 const mockInvoke = vi.mocked(invoke);
 
@@ -31,6 +33,7 @@ function setup() {
 }
 
 describe('useDashboard', () => {
+  afterEach(() => vi.clearAllMocks());
   describe('data loading', () => {
     it('calls loadInitialData on mount', async () => {
       setup();
@@ -143,6 +146,83 @@ describe('useDashboard', () => {
         serviceName: 'GitHub', username: 'u', password: 'p',
       }));
       expect(result.current.isCreatePasswordOpen).toBe(false);
+    });
+
+    it('confirmCreatePassword opens upgrade modal when limit reached', async () => {
+      mockInvoke.mockImplementation((cmd: unknown) => {
+        if (cmd === 'get_folders') return Promise.resolve([]);
+        if (cmd === 'get_passwords') return Promise.resolve([]);
+        if (cmd === 'check_limit_status') return Promise.resolve({ passwords_at_limit: false, folders_at_limit: false });
+        if (cmd === 'create_password') return Promise.reject(new Error(LIMIT_REACHED_PASSWORDS));
+        return Promise.resolve(undefined);
+      });
+      const { result, store } = renderHookWithProviders(() => useDashboard());
+      act(() => result.current.handleCreatePassword());
+      await act(async () => result.current.confirmCreatePassword({ serviceName: 'GitHub', username: 'u', password: 'p' }));
+      expect(result.current.isCreatePasswordOpen).toBe(false);
+      expect(store.get(activeModalAtom)).toBe('upgrade');
+    });
+
+    it('confirmCreatePassword re-throws non-limit errors', async () => {
+      mockInvoke.mockImplementation((cmd: unknown) => {
+        if (cmd === 'get_folders') return Promise.resolve([]);
+        if (cmd === 'get_passwords') return Promise.resolve([]);
+        if (cmd === 'check_limit_status') return Promise.resolve({ passwords_at_limit: false, folders_at_limit: false });
+        if (cmd === 'create_password') return Promise.reject(new Error('DB error'));
+        return Promise.resolve(undefined);
+      });
+      const { result } = renderHookWithProviders(() => useDashboard());
+      act(() => result.current.handleCreatePassword());
+      await expect(
+        act(async () => result.current.confirmCreatePassword({ serviceName: 'GitHub', username: 'u', password: 'p' }))
+      ).rejects.toThrow('DB error');
+    });
+  });
+
+  describe('folder creation', () => {
+    it('confirmCreateFolder opens upgrade modal when limit reached', async () => {
+      mockInvoke.mockImplementation((cmd: unknown) => {
+        if (cmd === 'get_folders') return Promise.resolve([]);
+        if (cmd === 'get_passwords') return Promise.resolve([]);
+        if (cmd === 'check_limit_status') return Promise.resolve({ passwords_at_limit: false, folders_at_limit: false });
+        if (cmd === 'create_folder') return Promise.reject(new Error(LIMIT_REACHED_FOLDERS));
+        return Promise.resolve(undefined);
+      });
+      const { result, store } = renderHookWithProviders(() => useDashboard());
+      act(() => result.current.handleAddFolder());
+      await act(async () => result.current.confirmCreateFolder({ name: 'Work', icon: 'folder' }));
+      expect(result.current.isCreateFolderOpen).toBe(false);
+      expect(store.get(activeModalAtom)).toBe('upgrade');
+    });
+
+    it('confirmCreateFolder re-throws non-limit errors', async () => {
+      mockInvoke.mockImplementation((cmd: unknown) => {
+        if (cmd === 'get_folders') return Promise.resolve([]);
+        if (cmd === 'get_passwords') return Promise.resolve([]);
+        if (cmd === 'check_limit_status') return Promise.resolve({ passwords_at_limit: false, folders_at_limit: false });
+        if (cmd === 'create_folder') return Promise.reject(new Error('DB error'));
+        return Promise.resolve(undefined);
+      });
+      const { result } = renderHookWithProviders(() => useDashboard());
+      act(() => result.current.handleAddFolder());
+      await expect(
+        act(async () => result.current.confirmCreateFolder({ name: 'Work', icon: 'folder' }))
+      ).rejects.toThrow('DB error');
+    });
+  });
+
+  describe('license status', () => {
+    it('sets licenseStatus to null when get_license_status rejects', async () => {
+      mockInvoke.mockImplementation((cmd: unknown) => {
+        if (cmd === 'get_folders') return Promise.resolve([]);
+        if (cmd === 'get_passwords') return Promise.resolve([]);
+        if (cmd === 'check_limit_status') return Promise.resolve({ passwords_at_limit: false, folders_at_limit: false });
+        if (cmd === 'get_license_status') return Promise.reject(new Error('network error'));
+        return Promise.resolve(undefined);
+      });
+      const { store } = renderHookWithProviders(() => useDashboard());
+      await act(async () => {});
+      expect(store.get(licenseStatusAtom)).toBeNull();
     });
   });
 });

@@ -1,8 +1,10 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import ChangeMasterPasswordModal from './index';
 
 describe('ChangeMasterPasswordModal', () => {
+  afterEach(() => vi.clearAllMocks());
   it('renders the dialog title', () => {
     render(<ChangeMasterPasswordModal onConfirm={vi.fn()} onCancel={vi.fn()} />);
     expect(screen.getByText('Change Master Password')).toBeInTheDocument();
@@ -42,5 +44,46 @@ describe('ChangeMasterPasswordModal', () => {
     // This test documents the current (unguarded) behaviour rather than asserting a guard
     // that does not exist. When mismatch validation is added to the component, update this.
     expect(onConfirm).toHaveBeenCalled();
+  });
+
+  it('calls onCancel when Escape is pressed', async () => {
+    const user = userEvent.setup();
+    const onCancel = vi.fn();
+    render(<ChangeMasterPasswordModal onConfirm={vi.fn()} onCancel={onCancel} />);
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(onCancel).toHaveBeenCalledTimes(1));
+  });
+
+  it('eye icon in Current Password field toggles all fields to type="text"', async () => {
+    const user = userEvent.setup();
+    render(<ChangeMasterPasswordModal onConfirm={vi.fn()} onCancel={vi.fn()} />);
+    const eyeButtons = document.querySelectorAll('button[tabindex="-1"]');
+    await user.click(eyeButtons[0] as HTMLElement);
+    await waitFor(() => {
+      const inputs = document.querySelectorAll('input');
+      inputs.forEach((input) => expect(input).toHaveAttribute('type', 'text'));
+    });
+  });
+
+  it('eye icon in New Password field toggles all fields to type="text"', async () => {
+    const user = userEvent.setup();
+    render(<ChangeMasterPasswordModal onConfirm={vi.fn()} onCancel={vi.fn()} />);
+    const eyeButtons = document.querySelectorAll('button[tabindex="-1"]');
+    await user.click(eyeButtons[1] as HTMLElement);
+    await waitFor(() => {
+      const inputs = document.querySelectorAll('input');
+      inputs.forEach((input) => expect(input).toHaveAttribute('type', 'text'));
+    });
+  });
+
+  it('eye icon in Confirm Password field toggles all fields to type="text"', async () => {
+    const user = userEvent.setup();
+    render(<ChangeMasterPasswordModal onConfirm={vi.fn()} onCancel={vi.fn()} />);
+    const eyeButtons = document.querySelectorAll('button[tabindex="-1"]');
+    await user.click(eyeButtons[2] as HTMLElement);
+    await waitFor(() => {
+      const inputs = document.querySelectorAll('input');
+      inputs.forEach((input) => expect(input).toHaveAttribute('type', 'text'));
+    });
   });
 });

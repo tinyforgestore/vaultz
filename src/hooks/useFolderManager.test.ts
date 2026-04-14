@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act } from '@testing-library/react';
 
 vi.mock('@tauri-apps/api/core');
@@ -10,6 +10,7 @@ import { useFolderManager } from './useFolderManager';
 const mockInvoke = vi.mocked(invoke);
 
 describe('useFolderManager', () => {
+  afterEach(() => vi.clearAllMocks());
   describe('handleAddFolder', () => {
     beforeEach(() => {
       mockInvoke.mockImplementation((cmd: string) => {
@@ -61,6 +62,25 @@ describe('useFolderManager', () => {
       expect(mockInvoke).toHaveBeenCalledWith('create_folder', { input: { name: 'New', icon: 'folder' } });
       expect(result.current.isCreateFolderOpen).toBe(false);
     });
+
+    it('closes modal and opens upgrade modal when limit is reached', async () => {
+      const { LIMIT_REACHED_FOLDERS } = await import('@/constants/folders');
+      mockInvoke.mockRejectedValueOnce(new Error(LIMIT_REACHED_FOLDERS));
+      const { result, store } = renderHookWithProviders(() => useFolderManager());
+      const { activeModalAtom } = await import('@/store/atoms');
+      act(() => result.current.setIsCreateFolderOpen(true));
+      await act(async () => result.current.confirmCreateFolder({ name: 'New', icon: 'folder' }));
+      expect(result.current.isCreateFolderOpen).toBe(false);
+      expect(store.get(activeModalAtom)).toBe('upgrade');
+    });
+
+    it('keeps modal open and logs when a non-limit error occurs', async () => {
+      mockInvoke.mockRejectedValueOnce(new Error('DB error'));
+      const { result } = renderHookWithProviders(() => useFolderManager());
+      act(() => result.current.setIsCreateFolderOpen(true));
+      await act(async () => result.current.confirmCreateFolder({ name: 'New', icon: 'folder' }));
+      expect(result.current.isCreateFolderOpen).toBe(true);
+    });
   });
 
   describe('confirmDeleteFolder', () => {
@@ -80,6 +100,15 @@ describe('useFolderManager', () => {
       expect(mockInvoke).toHaveBeenCalledWith('delete_folder', { folderId: 'f1' });
       expect(result.current.isDeleteFolderOpen).toBe(false);
       expect(result.current.selectedFolder).toBeNull();
+    });
+
+    it('keeps modal open and logs when delete_folder rejects', async () => {
+      mockInvoke.mockRejectedValueOnce(new Error('delete failed'));
+      const { result } = renderHookWithProviders(() => useFolderManager());
+      act(() => result.current.handleDeleteFolder('f1'));
+      await act(async () => result.current.confirmDeleteFolder());
+      expect(result.current.isDeleteFolderOpen).toBe(true);
+      expect(result.current.selectedFolder).toBe('f1');
     });
   });
 
@@ -146,6 +175,16 @@ describe('useFolderManager', () => {
       const { result } = renderHookWithProviders(() => useFolderManager());
       await act(async () => result.current.confirmEditFolder({ name: 'X', icon: 'folder' }));
       expect(mockInvoke).not.toHaveBeenCalled();
+    });
+
+    it('re-throws when update_folder rejects', async () => {
+      const folder = makeFolder({ id: 'f1', name: 'Work' });
+      mockInvoke.mockRejectedValueOnce(new Error('update failed'));
+      const { result } = renderHookWithProviders(() => useFolderManager());
+      act(() => result.current.handleEditFolder(folder));
+      await expect(
+        act(async () => result.current.confirmEditFolder({ name: 'Updated', icon: 'folder' }))
+      ).rejects.toThrow('update failed');
     });
   });
 

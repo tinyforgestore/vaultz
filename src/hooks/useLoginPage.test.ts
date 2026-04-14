@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { act } from '@testing-library/react';
 
 vi.mock('@tauri-apps/api/core');
@@ -24,6 +24,7 @@ function setup() {
 }
 
 describe('useLoginPage', () => {
+  afterEach(() => vi.clearAllMocks());
   describe('database check on mount', () => {
     it('checks database_exists and sets isDatabaseExist', async () => {
       mockInvoke.mockImplementation((cmd: unknown) => {
@@ -44,6 +45,16 @@ describe('useLoginPage', () => {
       const { result } = renderHookWithProviders(() => useLoginPage());
       await act(async () => {});
       expect(result.current.isDatabaseExist).toBe(false);
+    });
+
+    it('sets isCheckingDatabase to false even when database_exists rejects', async () => {
+      mockInvoke.mockImplementation((cmd: unknown) => {
+        if (cmd === 'database_exists') return Promise.reject(new Error('connection refused'));
+        return Promise.resolve(undefined);
+      });
+      const { result } = renderHookWithProviders(() => useLoginPage());
+      await act(async () => {});
+      expect(result.current.isCheckingDatabase).toBe(false);
     });
   });
 
@@ -79,9 +90,34 @@ describe('useLoginPage', () => {
       expect(result.current.isDatabaseExist).toBe(true);
       expect(result.current.importFilePath).toBeNull();
     });
+
+    it('handles error gracefully when import_vault rejects', async () => {
+      mockInvoke.mockImplementation((cmd: unknown) => {
+        if (cmd === 'database_exists') return Promise.resolve(false);
+        if (cmd === 'import_vault') return Promise.reject(new Error('wrong passphrase'));
+        return Promise.resolve(undefined);
+      });
+      const { result } = renderHookWithProviders(() => useLoginPage());
+      await act(async () => {});
+      act(() => result.current.setImportFilePath('/vault.pmvault'));
+      await act(async () => result.current.confirmImportVault('wrongpass'));
+      expect(result.current.isDatabaseExist).toBe(false);
+    });
   });
 
   describe('handleCreateMasterPassword', () => {
+    it('does not open loading modal when createMasterPassword returns false', async () => {
+      mockInvoke.mockImplementation((cmd: unknown) => {
+        if (cmd === 'database_exists') return Promise.resolve(false);
+        return Promise.resolve(undefined);
+      });
+      const { result } = renderHookWithProviders(() => useLoginPage());
+      await act(async () => {});
+      // passwords are empty → validation fails → createMasterPassword returns false
+      await act(async () => result.current.handleCreateMasterPassword());
+      expect(result.current.showLoadingModal).toBe(false);
+    });
+
     it('shows loading modal on success then transitions to isDatabaseExist', async () => {
       vi.useFakeTimers();
       mockInvoke.mockImplementation((cmd: unknown) => {

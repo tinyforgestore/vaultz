@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
@@ -13,7 +13,7 @@ vi.mock('@/services/sessionService', () => ({
 
 import { invoke } from '@tauri-apps/api/core';
 import Dashboard from './index';
-import { allPasswordsAtom, foldersAtom, licenseStatusAtom } from '@/store/atoms';
+import { allPasswordsAtom, foldersAtom, licenseStatusAtom, activeModalAtom, favoriteAlertAtom } from '@/store/atoms';
 import { makePassword, makeFolder } from '@/testUtils';
 import type { Password, Folder } from '@/types';
 
@@ -481,5 +481,231 @@ describe('Dashboard', () => {
     });
 
     expect(await screen.findByText('Create New Folder')).toBeInTheDocument();
+  });
+
+  it('upgrade banner CTA opens upgrade modal and clears pending key', async () => {
+    const user = userEvent.setup();
+    const { store } = renderDashboard();
+
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /^Upgrade to Pro$/i }));
+    });
+
+    expect(store.get(activeModalAtom)).toBe('upgrade');
+  });
+
+  it('Unfavorite bulk button calls update_password with isFavorite false', async () => {
+    const user = userEvent.setup();
+    const pw = makePassword({ id: 'p1', name: 'GitHub', isFavorite: true });
+    const rawPw = { ...pw, createdAt: pw.createdAt.toISOString(), updatedAt: pw.updatedAt.toISOString() };
+
+    mockInvoke.mockImplementation((cmd: unknown) => {
+      if (cmd === 'get_folders') return Promise.resolve([]);
+      if (cmd === 'get_passwords') return Promise.resolve([rawPw]);
+      if (cmd === 'check_limit_status') return Promise.resolve({ passwords_at_limit: false, folders_at_limit: false });
+      if (cmd === 'get_license_status') return Promise.resolve(null);
+      if (cmd === 'update_password') return Promise.resolve({ ...rawPw, isFavorite: false });
+      return Promise.resolve(undefined);
+    });
+
+    const store = createStore();
+    store.set(allPasswordsAtom, [pw]);
+    render(
+      <MemoryRouter>
+        <Provider store={store}>
+          <Dashboard />
+        </Provider>
+      </MemoryRouter>
+    );
+
+    await screen.findByText('GitHub');
+
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /toggle selection mode/i }));
+    });
+    await screen.findByText('0 selected');
+
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /Select All/i }));
+    });
+    await waitFor(() => expect(screen.getByText('1 selected')).toBeInTheDocument());
+
+    const unfavoriteBtn = screen.getByRole('button', { name: /^Unfavorite$/i });
+    await act(async () => {
+      await user.click(unfavoriteBtn);
+    });
+
+    await waitFor(() => {
+      expect(mockInvoke).toHaveBeenCalledWith('update_password', expect.objectContaining({ id: 'p1' }));
+    });
+  });
+
+  it('CreatePasswordModal cancel closes the modal', async () => {
+    const user = userEvent.setup();
+    renderDashboard();
+    await act(async () => {});
+
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /add password/i }));
+    });
+
+    expect(await screen.findByText('Create New Password')).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    await waitFor(() => {
+      expect(screen.queryByText('Create New Password')).not.toBeInTheDocument();
+    });
+  });
+
+  it('CreateFolderModal (New Folder) cancel closes the modal', async () => {
+    const user = userEvent.setup();
+    renderDashboard();
+
+    await act(async () => {
+      await user.click(screen.getByText('New Folder'));
+    });
+
+    expect(await screen.findByText('Create New Folder')).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    await waitFor(() => {
+      expect(screen.queryByText('Create New Folder')).not.toBeInTheDocument();
+    });
+  });
+
+  it('DeletePasswordModal cancel closes it', async () => {
+    const user = userEvent.setup();
+    const pw = makePassword({ id: 'p1', name: 'GitHub' });
+    renderDashboard({ passwords: [pw] });
+
+    await screen.findByText('GitHub');
+
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /toggle selection mode/i }));
+    });
+    await screen.findByText('0 selected');
+
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /Select All/i }));
+    });
+    await waitFor(() => expect(screen.getByText('1 selected')).toBeInTheDocument());
+
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /^Delete$/i }));
+    });
+    expect(await screen.findByText(/Delete Password/i)).toBeInTheDocument();
+
+    await user.keyboard('{Escape}');
+    await waitFor(() => {
+      expect(screen.queryByText(/Delete Password/i)).not.toBeInTheDocument();
+    });
+  });
+
+  it('CreatePasswordModal submission creates password and closes modal', async () => {
+    const user = userEvent.setup();
+
+    mockInvoke.mockImplementation((cmd: unknown) => {
+      if (cmd === 'get_folders') return Promise.resolve([]);
+      if (cmd === 'get_passwords') return Promise.resolve([]);
+      if (cmd === 'check_limit_status') return Promise.resolve({ passwords_at_limit: false, folders_at_limit: false });
+      if (cmd === 'get_license_status') return Promise.resolve(null);
+      if (cmd === 'create_password') return Promise.resolve({ id: 'new-p', name: 'GitHub', username: 'user', password: 'pw', isFavorite: false, folderId: '', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+      return Promise.resolve(undefined);
+    });
+
+    const store = createStore();
+    render(
+      <MemoryRouter>
+        <Provider store={store}>
+          <Dashboard />
+        </Provider>
+      </MemoryRouter>
+    );
+    await act(async () => {});
+
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /add password/i }));
+    });
+
+    expect(await screen.findByText('Create New Password')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText(/Service Name/i), { target: { value: 'GitHub' } });
+    fireEvent.change(screen.getByLabelText(/Username/i), { target: { value: 'user@example.com' } });
+    fireEvent.change(document.querySelector('input[type="password"]') as HTMLElement, { target: { value: 'secret123' } });
+
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /^Save$/i }));
+    });
+
+    await waitFor(() => {
+      expect(mockInvoke).toHaveBeenCalledWith('create_password', expect.any(Object));
+      expect(screen.queryByText('Create New Password')).not.toBeInTheDocument();
+    });
+  });
+
+  it('CreateFolderModal (New Folder) submission creates folder and closes modal', async () => {
+    const user = userEvent.setup();
+
+    mockInvoke.mockImplementation((cmd: unknown) => {
+      if (cmd === 'get_folders') return Promise.resolve([]);
+      if (cmd === 'get_passwords') return Promise.resolve([]);
+      if (cmd === 'check_limit_status') return Promise.resolve({ passwords_at_limit: false, folders_at_limit: false });
+      if (cmd === 'get_license_status') return Promise.resolve(null);
+      if (cmd === 'create_folder') return Promise.resolve({ id: 'new-f', name: 'Work', icon: 'folder', isDefault: false, createdAt: new Date().toISOString() });
+      return Promise.resolve(undefined);
+    });
+
+    const store = createStore();
+    render(
+      <MemoryRouter>
+        <Provider store={store}>
+          <Dashboard />
+        </Provider>
+      </MemoryRouter>
+    );
+
+    await act(async () => {
+      await user.click(screen.getByText('New Folder'));
+    });
+
+    expect(await screen.findByText('Create New Folder')).toBeInTheDocument();
+    await user.type(screen.getByRole('textbox'), 'Work');
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /^Create$/i }));
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText('Create New Folder')).not.toBeInTheDocument();
+    });
+  });
+
+  it('favoriteAlert toast disappears after 2 seconds', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+
+    const store = createStore();
+    store.set(favoriteAlertAtom, 'Maximum 2 favorites per folder');
+    mockInvoke.mockImplementation((cmd: unknown) => {
+      if (cmd === 'get_folders') return Promise.resolve([]);
+      if (cmd === 'get_passwords') return Promise.resolve([]);
+      if (cmd === 'check_limit_status') return Promise.resolve({ passwords_at_limit: false, folders_at_limit: false });
+      if (cmd === 'get_license_status') return Promise.resolve(null);
+      return Promise.resolve(undefined);
+    });
+
+    render(
+      <MemoryRouter>
+        <Provider store={store}>
+          <Dashboard />
+        </Provider>
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByText('Maximum 2 favorites per folder')).toBeInTheDocument();
+
+    act(() => { vi.advanceTimersByTime(2000); });
+
+    await waitFor(() => {
+      expect(screen.queryByText('Maximum 2 favorites per folder')).not.toBeInTheDocument();
+    });
+
+    vi.useRealTimers();
   });
 });
