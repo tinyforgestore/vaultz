@@ -1,4 +1,5 @@
-import { Trash2, Pencil, Lock, Folder, ArrowLeft, Download, ShieldOff, Search, Crown } from 'lucide-react';
+import { useCallback } from 'react';
+import { Trash2, Pencil, Lock, Folder, ArrowLeft, Download, ShieldOff, Search, Crown, Keyboard, Sun } from 'lucide-react';
 import { version, homepage } from '../../../package.json';
 import tinyForgeLogo from '@/assets/tinyforge-logo.svg';
 import { Flex, Card, Button, Heading, Box, IconButton, TextField, Text, Select } from '@radix-ui/themes';
@@ -8,10 +9,20 @@ import CreateFolderModal from '@/components/modals/CreateFolderModal';
 import EditFolderModal from '@/components/modals/EditFolderModal';
 import DeleteFolderModal from '@/components/modals/DeleteFolderModal';
 import { useSettings } from '@/hooks/useSettings';
+import { useTheme } from '@/hooks/useTheme';
 import { FOLDER_ICON_MAP } from '@/constants/folders';
 import * as styles from './index.css';
 
 export default function SettingsPage() {
+  const contentRef = useCallback((node: HTMLDivElement | null) => {
+    // preventScroll: true — without this, focus() triggers the browser's scroll-into-view
+    // algorithm on ancestor containers (incl. the Radix Theme div), shifting the scroll
+    // offset and pulling the Dashboard header toward the traffic lights on return navigation.
+    if (node) node.focus({ preventScroll: true });
+  }, []);
+
+  const { theme, setTheme } = useTheme();
+
   const {
     isChangeMasterPasswordOpen,
     isExportVaultOpen,
@@ -60,7 +71,7 @@ export default function SettingsPage() {
         <span className={styles.headerTitle}>Settings</span>
       </div>
 
-      <div className={styles.contentArea}>
+      <div className={styles.contentArea} ref={contentRef} tabIndex={-1}>
         <Flex direction="column" gap="3">
           {/* License (free only) — first card */}
           {!isPro && (
@@ -112,6 +123,25 @@ export default function SettingsPage() {
                 {lockTimeoutError && (
                   <Text size="1" color="red">{lockTimeoutError}</Text>
                 )}
+              </Flex>
+            </Flex>
+          </Card>
+
+          {/* Appearance */}
+          <Card size="1">
+            <Flex direction="column" gap="2">
+              <Heading size="2">
+                <Flex as="span" align="center" gap="1"><Sun size={14} /> Appearance</Flex>
+              </Heading>
+              <Flex align="center" justify="between" gap="2">
+                <Text size="1" color="gray">Theme</Text>
+                <Select.Root value={theme} onValueChange={(val) => setTheme(val as 'light' | 'dark')}>
+                  <Select.Trigger aria-label="Theme" />
+                  <Select.Content>
+                    <Select.Item value="light">Light</Select.Item>
+                    <Select.Item value="dark">Dark</Select.Item>
+                  </Select.Content>
+                </Select.Root>
               </Flex>
             </Flex>
           </Card>
@@ -173,6 +203,44 @@ export default function SettingsPage() {
               <Button size="1" variant="outline" onClick={handleAddFolder}>
                 + Add New Folder
               </Button>
+            </Flex>
+          </Card>
+
+          {/* Keyboard Shortcuts */}
+          <Card size="1">
+            <Flex direction="column" gap="2">
+              <Heading size="2">
+                <Flex as="span" align="center" gap="1"><Keyboard size={14} /> Keyboard Shortcuts</Flex>
+              </Heading>
+              <Flex direction="column" gap="1">
+                {(
+                  [
+                    ['Focus search', ['/', '⌘K']],
+                    ['Navigate items', ['↑', '↓']],
+                    ['Switch folders', ['←', '→']],
+                    ['Open item', ['↵']],
+                    ['Copy password', ['C']],
+                    ['Toggle favorite', ['F']],
+                    ['New password', ['N']],
+                    ['New folder', ['⇧N']],
+                    ['Delete item', ['Del']],
+                    ['Toggle select mode', ['X']],
+                    ['Toggle item (select mode)', ['Space']],
+                    ['Clear search / deselect', ['Esc']],
+                    ['Go to Settings', ['⌘,']],
+                    ['Logout', ['⌘⇧L']],
+                  ] as [string, string[]][]
+                ).map(([action, keys]) => (
+                  <Flex key={action} justify="between" align="center" gap="2">
+                    <Text size="1" color="gray">{action}</Text>
+                    <Flex gap="1" align="center" flexShrink="0">
+                      {keys.map((k) => (
+                        <kbd key={k} className={styles.kbdKey}>{k}</kbd>
+                      ))}
+                    </Flex>
+                  </Flex>
+                ))}
+              </Flex>
             </Flex>
           </Card>
 

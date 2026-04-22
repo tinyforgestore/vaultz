@@ -12,7 +12,7 @@ const shake = keyframes({
 export const container = style({
   width: '490px',
   height: '100vh',
-  backgroundColor: themeVars.pageBgBase,
+  background: themeVars.bg.page,
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
@@ -21,22 +21,6 @@ export const container = style({
   boxSizing: 'border-box',
   position: 'relative',
   overflow: 'hidden',
-  selectors: {
-    '&::before': {
-      content: '""',
-      position: 'absolute',
-      top: '30%',
-      left: '50%',
-      transform: 'translate(-50%, -50%)',
-      width: '340px',
-      height: '340px',
-      background: 'rgba(99, 102, 241, 0.18)',
-      filter: 'blur(100px)',
-      borderRadius: '50%',
-      pointerEvents: 'none',
-      zIndex: 0,
-    },
-  },
 });
 
 export const dragRegion = style({
@@ -48,7 +32,7 @@ export const dragRegion = style({
 });
 
 export const card = style({
-  backgroundColor: 'white',
+  backgroundColor: themeVars.bg.card,
   border: '1px solid var(--gray-4)',
   borderRadius: '20px',
   padding: '30px 25px',
@@ -57,7 +41,7 @@ export const card = style({
   alignItems: 'center',
   width: '100%',
   boxSizing: 'border-box',
-  boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
+  boxShadow: themeVars.shadow.card,
   position: 'relative',
   zIndex: 1,
 });

@@ -1,4 +1,5 @@
 import { style } from '@vanilla-extract/css';
+import { themeVars } from '@/styles/theme.css';
 
 export const overlay = style({
   position: 'fixed',
@@ -30,7 +31,7 @@ export const iconWrap = style({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  boxShadow: '0 0 80px rgba(245, 158, 11, 0.55)',
+  boxShadow: themeVars.shadow.proIconGlow,
   marginBottom: '8px',
 });
 
@@ -58,6 +59,6 @@ export const dismiss = style({
   fontWeight: '600',
   cursor: 'pointer',
   ':hover': {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'var(--gray-a3)',
   },
 });

@@ -11,6 +11,11 @@ vi.mock('@/services/sessionService', () => ({
   sessionService: { logout: vi.fn() },
 }));
 
+const mockSetTheme = vi.fn();
+vi.mock('@/hooks/useTheme', () => ({
+  useTheme: () => ({ theme: 'light', setTheme: mockSetTheme }),
+}));
+
 // Radix UI Select doesn't work well in jsdom (missing hasPointerCapture / scrollIntoView).
 // Replace Select.Root with a native <select> so onValueChange tests work without those APIs.
 vi.mock('@radix-ui/themes', async (importOriginal) => {
@@ -21,19 +26,36 @@ vi.mock('@radix-ui/themes', async (importOriginal) => {
     onValueChange?: (value: string) => void;
     children?: React.ReactNode;
   };
+  type SelectTriggerProps = { 'aria-label'?: string };
   type SelectItemProps = { value: string; children?: React.ReactNode };
-  const MockSelectRoot = ({ value, onValueChange, children }: SelectRootProps) =>
-    React.createElement(
+
+  let MockSelectTrigger: (props: SelectTriggerProps) => null;
+
+  // Collect the aria-label from any Trigger child to use on the <select>
+  function getAriaLabel(children: React.ReactNode): string {
+    let label = '';
+    React.Children.forEach(children, (child) => {
+      if (React.isValidElement(child) && child.type === MockSelectTrigger) {
+        label = (child.props as SelectTriggerProps)['aria-label'] ?? '';
+      }
+    });
+    return label;
+  }
+
+  const MockSelectRoot = ({ value, onValueChange, children }: SelectRootProps) => {
+    const ariaLabel = getAriaLabel(children);
+    return React.createElement(
       'select',
       {
-        'aria-label': 'Lock screen timeout',
+        'aria-label': ariaLabel,
         role: 'combobox',
         value: value ?? '',
         onChange: (e: React.ChangeEvent<HTMLSelectElement>) => onValueChange?.(e.target.value),
       },
       children,
     );
-  const MockSelectTrigger = () => null;
+  };
+  MockSelectTrigger = (_props: SelectTriggerProps) => null;
   const MockSelectContent = ({ children }: { children?: React.ReactNode }) =>
     React.createElement(React.Fragment, null, children);
   const MockSelectItem = ({ value, children }: SelectItemProps) =>
@@ -641,6 +663,29 @@ describe('SettingsPage', () => {
     });
     await waitFor(() => {
       expect(screen.queryByText('Delete Folder?')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Appearance section', () => {
+    it('renders the Appearance section heading', () => {
+      renderSettings();
+      expect(screen.getByText('Appearance')).toBeInTheDocument();
+    });
+
+    it('theme dropdown shows the current theme value from useTheme', async () => {
+      renderSettings();
+      await act(async () => {});
+      const select = await screen.findByRole('combobox', { name: /theme/i });
+      // useTheme mock returns 'light', so the select value should be 'light'
+      expect((select as HTMLSelectElement).value).toBe('light');
+    });
+
+    it('selecting a new theme calls setTheme', async () => {
+      renderSettings();
+      await act(async () => {});
+      const select = await screen.findByRole('combobox', { name: /theme/i });
+      fireEvent.change(select, { target: { value: 'dark' } });
+      expect(mockSetTheme).toHaveBeenCalledWith('dark');
     });
   });
 });

@@ -17,6 +17,7 @@ import {
   isAuthenticatedAtom,
   activeModalAtom,
   licenseStatusAtom,
+  isLogoutConfirmAtom,
 } from '@/store/atoms';
 import { SPECIAL_FOLDERS, LIMIT_REACHED_PASSWORDS, LIMIT_REACHED_FOLDERS } from '@/constants/folders';
 
@@ -113,11 +114,11 @@ describe('useDashboard', () => {
   });
 
   describe('logout', () => {
-    it('clears isAuthenticated and resets folder selection', async () => {
+    it('handleLogout sets isLogoutConfirmAtom to true', async () => {
       const { result, store } = setup();
-      store.set(isAuthenticatedAtom, true);
-      await act(async () => result.current.confirmLogout());
-      expect(store.get(isAuthenticatedAtom)).toBe(false);
+      expect(store.get(isLogoutConfirmAtom)).toBe(false);
+      await act(async () => result.current.handleLogout());
+      expect(store.get(isLogoutConfirmAtom)).toBe(true);
     });
   });
 

@@ -208,6 +208,9 @@ export const getPasswordByIdAtom = atom(
   }
 );
 
+// UI state atoms
+export const isLogoutConfirmAtom = atom(false);
+
 // Auth actions
 export const loginAtom = atom(
   null,
@@ -238,3 +241,5 @@ export const changeMasterPasswordAtom = atom(
     return storageService.changeMasterPassword(currentPassword, newPassword);
   }
 );
+
+export const themeAtom = atomWithStorage<'light' | 'dark'>('vaultz-theme', 'light');

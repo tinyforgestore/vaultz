@@ -11,6 +11,12 @@ export const selectedCard = style({
   backgroundColor: 'var(--accent-2)',
 });
 
+export const cardFocused = style({
+  outline: '2px solid var(--accent-9)',
+  outlineOffset: '-1px',
+  backgroundColor: 'var(--accent-4)',
+});
+
 export const checkbox = style({
   display: 'flex',
   alignItems: 'center',

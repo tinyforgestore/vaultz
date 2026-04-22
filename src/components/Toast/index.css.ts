@@ -1,4 +1,5 @@
 import { style } from '@vanilla-extract/css';
+import { themeVars } from '@/styles/theme.css';
 
 export const toastWrapper = style({
   display: 'inline-flex',
@@ -10,7 +11,7 @@ export const toastWrapper = style({
   borderRadius: '8px',
   fontSize: '13px',
   fontWeight: '500',
-  boxShadow: '0 4px 20px rgba(0,0,0,0.35)',
+  boxShadow: themeVars.shadow.toast,
   whiteSpace: 'nowrap',
   userSelect: 'none',
 });

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Provider, createStore } from 'jotai';
+import { MemoryRouter } from 'react-router-dom';
 
 vi.mock('@tauri-apps/plugin-deep-link', () => ({
   getCurrent: vi.fn().mockResolvedValue(null),
@@ -8,6 +9,9 @@ vi.mock('@tauri-apps/plugin-deep-link', () => ({
 }));
 vi.mock('@tauri-apps/plugin-opener', () => ({ openUrl: vi.fn() }));
 vi.mock('@tauri-apps/api/core');
+vi.mock('@/services/sessionService', () => ({
+  sessionService: { logout: vi.fn().mockResolvedValue(undefined) },
+}));
 
 import { invoke } from '@tauri-apps/api/core';
 import GlobalModals from './index';
@@ -24,9 +28,11 @@ function renderGlobalModals(activeModal: ActiveModal = null, pendingKey: string 
   return {
     store,
     ...render(
-      <Provider store={store}>
-        <GlobalModals />
-      </Provider>
+      <MemoryRouter>
+        <Provider store={store}>
+          <GlobalModals />
+        </Provider>
+      </MemoryRouter>
     ),
   };
 }
@@ -34,9 +40,12 @@ function renderGlobalModals(activeModal: ActiveModal = null, pendingKey: string 
 describe('GlobalModals', () => {
   afterEach(() => vi.clearAllMocks());
 
-  it('renders nothing when activeModal is null', () => {
-    const { container } = renderGlobalModals();
-    expect(container.firstChild).toBeNull();
+  it('renders no modal content when activeModal is null and logout confirm is closed', () => {
+    renderGlobalModals();
+    expect(screen.queryByText('Upgrade to Pro')).not.toBeInTheDocument();
+    expect(screen.queryByText('Activate Pro License')).not.toBeInTheDocument();
+    expect(screen.queryByText('Welcome to Pro!')).not.toBeInTheDocument();
+    expect(screen.queryByText('Are you sure you want to logout?')).not.toBeInTheDocument();
   });
 
   it('shows UpgradeToProModal when activeModal is "upgrade"', () => {

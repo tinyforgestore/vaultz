@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { invoke } from '@tauri-apps/api/core';
@@ -11,31 +11,36 @@ import {
   createPasswordAtom,
   toggleFavoriteAtom,
   favoriteAlertAtom,
-  logoutAtom,
   loadInitialDataAtom,
   licenseStatusAtom,
   isProAtom,
   activeModalAtom,
   pendingLicenseKeyAtom,
+  deletePasswordAtom,
+  isLogoutConfirmAtom,
 } from '@/store/atoms';
 import { SPECIAL_FOLDERS, VIRTUAL_FOLDERS, isSpecialFolder, LIMIT_REACHED_PASSWORDS, LIMIT_REACHED_FOLDERS } from '@/constants/folders';
-import { CreatePasswordInput, CreateFolderInput } from '@/types';
+import { CreatePasswordInput, CreateFolderInput, Password } from '@/types';
 import { LicenseStatus } from '@/types/license';
-import { sessionService } from '@/services/sessionService';
 import { useClipboard } from './useClipboard';
 import { usePasswordSelection } from './usePasswordSelection';
 import { useCreateFolder } from './useCreateFolder';
 import { useLimitCheck } from './useLimitCheck';
+import { useKeyboardNav, resolveSearchInput } from './useKeyboardNav';
 
 const FAVORITES_ID = SPECIAL_FOLDERS.FAVORITES.toString();
 
 export function useDashboard() {
   const [isCreatePasswordOpen, setIsCreatePasswordOpen] = useState(false);
-  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useAtom(isLogoutConfirmAtom);
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [passwordToDelete, setPasswordToDelete] = useState<Password | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | HTMLElement>(null);
   const setLicenseStatus = useSetAtom(licenseStatusAtom);
   const isPro = useAtomValue(isProAtom);
   const setActiveModal = useSetAtom(activeModalAtom);
+  const activeModal = useAtomValue(activeModalAtom);
   const setPendingLicenseKey = useSetAtom(pendingLicenseKeyAtom);
 
   const realFolders = useAtomValue(foldersAtom);
@@ -68,8 +73,8 @@ export function useDashboard() {
   const [searchQuery, setSearchQuery] = useAtom(searchQueryAtom);
   const createPassword = useSetAtom(createPasswordAtom);
   const toggleFavorite = useSetAtom(toggleFavoriteAtom);
+  const deletePassword = useSetAtom(deletePasswordAtom);
   const [favoriteAlert, setFavoriteAlert] = useAtom(favoriteAlertAtom);
-  const logout = useSetAtom(logoutAtom);
   const loadData = useSetAtom(loadInitialDataAtom);
   const navigate = useNavigate();
 
@@ -82,6 +87,10 @@ export function useDashboard() {
   useEffect(() => { loadData(); }, [loadData]);
 
   useEffect(() => {
+    setSelectedIndex(-1);
+  }, [selectedFolder, searchQuery]);
+
+  useEffect(() => {
     invoke<LicenseStatus>('get_license_status')
       .then((status) => setLicenseStatus(status))
       .catch(() => setLicenseStatus(null));
@@ -90,12 +99,6 @@ export function useDashboard() {
   const handlePasswordClick = (passwordId: string) => navigate(`/password/${passwordId}`);
   const handleSettingsClick = () => navigate('/settings');
   const handleLogout = () => setIsLogoutConfirmOpen(true);
-
-  const confirmLogout = async () => {
-    await sessionService.logout();
-    logout();
-    navigate('/login');
-  };
 
   const handleCreatePassword = () => {
     checkAndOpen('password', () => setIsCreatePasswordOpen(true));
@@ -143,6 +146,80 @@ export function useDashboard() {
     [folders, folderCountMap],
   );
 
+  const handleNextFolder = useCallback(() => {
+    const idx = visibleFolders.findIndex(f => f.id === selectedFolder);
+    const next = visibleFolders[(idx + 1) % visibleFolders.length];
+    if (next) setSelectedFolder(next.id);
+  }, [visibleFolders, selectedFolder, setSelectedFolder]);
+
+  const handlePrevFolder = useCallback(() => {
+    const idx = visibleFolders.findIndex(f => f.id === selectedFolder);
+    const prev = visibleFolders[(idx - 1 + visibleFolders.length) % visibleFolders.length];
+    if (prev) setSelectedFolder(prev.id);
+  }, [visibleFolders, selectedFolder, setSelectedFolder]);
+
+  const handleFocusSearch = useCallback(() => {
+    resolveSearchInput(searchInputRef)?.focus();
+  }, []);
+
+  const handleKeyboardEnter = useCallback((index: number) => {
+    const pw = passwords[index];
+    if (pw) navigate(`/password/${pw.id}`);
+  }, [passwords, navigate]);
+
+  const handleKeyboardCopy = useCallback((index: number) => {
+    const pw = passwords[index];
+    if (pw) clipboard.handleCopyPassword(pw.id, pw.password);
+  }, [passwords, clipboard]);
+
+  const handleKeyboardFavorite = useCallback((index: number) => {
+    const pw = passwords[index];
+    if (pw) toggleFavorite(pw.id);
+  }, [passwords, toggleFavorite]);
+
+  const handleKeyboardDelete = useCallback((index: number) => {
+    const pw = passwords[index];
+    if (pw) setPasswordToDelete(pw);
+  }, [passwords]);
+
+  const handleClearSearch = useCallback(() => {
+    setSearchQuery('');
+    resolveSearchInput(searchInputRef)?.focus();
+  }, [setSearchQuery]);
+
+  const isAnyModalOpen =
+    isCreatePasswordOpen ||
+    isLogoutConfirmOpen ||
+    isCreateFolderOpen ||
+    passwordToDelete !== null ||
+    activeModal !== null;
+
+  useKeyboardNav({
+    itemCount: passwords.length,
+    selectedIndex,
+    isAnyModalOpen,
+    isSelectionMode: selection.isSelectionMode,
+    searchInputRef,
+    onSelectIndex: setSelectedIndex,
+    onFocusSearch: handleFocusSearch,
+    onClearSearch: handleClearSearch,
+    onNextFolder: handleNextFolder,
+    onPrevFolder: handlePrevFolder,
+    onToggleSelectionMode: selection.toggleSelectionMode,
+    itemActions: {
+      onEnter: handleKeyboardEnter,
+      onCopy: handleKeyboardCopy,
+      onFavorite: handleKeyboardFavorite,
+      onDelete: handleKeyboardDelete,
+      onNewPassword: () => setIsCreatePasswordOpen(true),
+      onNewFolder: () => setIsCreateFolderOpen(true),
+      onToggleItemSelection: (index) => {
+        const pw = passwords[index];
+        if (pw) selection.toggleSelection(pw.id);
+      },
+    },
+  });
+
   useEffect(() => {
     if (selectedFolder === FAVORITES_ID && (folderCountMap[FAVORITES_ID] || 0) === 0) {
       setSelectedFolder(SPECIAL_FOLDERS.ALL.toString());
@@ -155,6 +232,14 @@ export function useDashboard() {
     return () => clearTimeout(timer);
   }, [favoriteAlert, setFavoriteAlert]);
 
+  const confirmDeletePassword = useCallback(() => {
+    if (!passwordToDelete) return;
+    const id = passwordToDelete.id;
+    setPasswordToDelete(null);
+    setSelectedIndex(-1);
+    deletePassword(id).catch(() => {});
+  }, [passwordToDelete, deletePassword]);
+
   return {
     folders,
     passwords,
@@ -164,31 +249,34 @@ export function useDashboard() {
     selectedFolder,
     searchQuery,
     isCreatePasswordOpen,
-    isLogoutConfirmOpen,
     isCreateFolderOpen,
     favoriteAlert,
     showFolderTag,
     visibleFolders,
     isPro,
+    selectedIndex,
+    passwordToDelete,
+    searchInputRef,
     ...clipboard,
     ...selection,
 
     setSelectedFolder,
     setSearchQuery,
     setIsCreatePasswordOpen,
-    setIsLogoutConfirmOpen,
     setIsCreateFolderOpen,
     setActiveModal,
     setPendingLicenseKey,
+    setSelectedIndex,
+    setPasswordToDelete,
 
     handlePasswordClick,
     handleSettingsClick,
     handleLogout,
-    confirmLogout,
     toggleFavorite,
     handleCreatePassword,
     handleAddFolder,
     confirmCreatePassword,
     confirmCreateFolder,
+    confirmDeletePassword,
   };
 }

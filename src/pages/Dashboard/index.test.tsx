@@ -8,11 +8,12 @@ import { Provider, createStore } from 'jotai';
 vi.mock('@tauri-apps/api/core');
 vi.mock('@tauri-apps/plugin-clipboard-manager', () => ({ writeText: vi.fn() }));
 vi.mock('@/services/sessionService', () => ({
-  sessionService: { logout: vi.fn() },
+  sessionService: { logout: vi.fn().mockResolvedValue(undefined) },
 }));
 
 import { invoke } from '@tauri-apps/api/core';
 import Dashboard from './index';
+import GlobalModals from '@/components/GlobalModals';
 import { allPasswordsAtom, foldersAtom, licenseStatusAtom, activeModalAtom, favoriteAlertAtom } from '@/store/atoms';
 import { makePassword, makeFolder } from '@/testUtils';
 import type { Password, Folder } from '@/types';
@@ -50,6 +51,7 @@ function renderDashboard(options: RenderDashboardOptions = {}) {
       <MemoryRouter>
         <Provider store={store}>
           <Dashboard />
+          <GlobalModals />
         </Provider>
       </MemoryRouter>
     ),

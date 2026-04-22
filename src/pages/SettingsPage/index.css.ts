@@ -4,7 +4,7 @@ import { themeVars } from '@/styles/theme.css';
 export const container = style({
   width: '490px',
   height: '100vh',
-  background: themeVars.pageBackground,
+  background: themeVars.bg.page,
   display: 'grid',
   gridTemplateRows: 'auto 1fr',
   overflow: 'hidden',
@@ -15,7 +15,7 @@ export const header = style({
   alignItems: 'center',
   gap: '8px',
   padding: '20px 12px 10px 12px',
-  backgroundColor: 'white',
+  backgroundColor: themeVars.bg.panel,
   borderBottom: '1px solid var(--gray-4)',
   flexShrink: 0,
 });
@@ -87,6 +87,19 @@ export const aboutFooter = style({
   fontSize: '14px',
   color: 'var(--gray-10)',
   textAlign: 'center',
+});
+
+export const kbdKey = style({
+  display: 'inline-block',
+  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+  fontSize: '11px',
+  lineHeight: '1',
+  padding: '2px 6px',
+  borderRadius: '4px',
+  background: 'var(--gray-3)',
+  border: '1px solid var(--gray-6)',
+  color: 'var(--gray-12)',
+  whiteSpace: 'nowrap',
 });
 
 

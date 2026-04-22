@@ -1,17 +1,41 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "@/components/App";
+import '@fontsource-variable/inter';
+import '@fontsource-variable/jetbrains-mono';
 import '@radix-ui/themes/styles.css';
 import './global.css';
 import { Theme } from '@radix-ui/themes';
-import { lightTheme } from '@/styles/theme.css';
+import { Provider } from 'jotai';
+import { lightTheme, darkTheme } from '@/styles/theme.css';
+import { useTheme } from '@/hooks/useTheme';
 
-document.addEventListener('contextmenu', (e) => e.preventDefault());
+// Apply initial theme synchronously before first paint to avoid flash.
+// atomWithStorage serializes values as JSON, so raw localStorage values carry
+// surrounding quotes (e.g. '"dark"'). Strip them when reading directly.
+const _rawTheme = localStorage.getItem('vaultz-theme');
+const _initialTheme = (_rawTheme === '"dark"') ? 'dark' : 'light';
+// Set both document.documentElement (for global CSS / vanilla-extract themeVars)
+// and the Radix <Theme className> (for Radix component scope) — each layer needs
+// the class independently; setting only one leaves the other unstyled.
+document.documentElement.classList.add(_initialTheme === 'dark' ? darkTheme : lightTheme);
+
+function ThemedApp() {
+  const { theme } = useTheme();
+  return (
+    // className syncs the Radix component tree; document.documentElement class
+    // (managed by useTheme's useEffect) covers global CSS vars and vanilla-extract tokens.
+    <Theme appearance={theme} className={theme === 'dark' ? darkTheme : lightTheme}>
+      <App />
+    </Theme>
+  );
+}
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
-    <Theme className={lightTheme}>
-      <App />
-    </Theme>
+    {/* Jotai Provider gives all hooks access to the shared global store */}
+    <Provider>
+      <ThemedApp />
+    </Provider>
   </React.StrictMode>,
 );

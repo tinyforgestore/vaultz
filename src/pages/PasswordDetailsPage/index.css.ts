@@ -4,7 +4,7 @@ import { themeVars } from '@/styles/theme.css';
 export const container = style({
   width: '490px',
   height: '100vh',
-  background: themeVars.pageBackground,
+  background: themeVars.bg.page,
   display: 'flex',
   flexDirection: 'column',
   overflow: 'hidden',
@@ -14,7 +14,7 @@ export const container = style({
 export const notFoundContainer = style({
   width: '490px',
   height: '100vh',
-  background: themeVars.pageBackground,
+  background: themeVars.bg.page,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -25,7 +25,7 @@ export const header = style({
   alignItems: 'center',
   gap: '8px',
   padding: '20px 12px 10px 12px',
-  backgroundColor: 'var(--gray-2)',
+  backgroundColor: themeVars.bg.panel,
   borderBottom: '1px solid var(--gray-4)',
   flexShrink: 0,
 });
@@ -56,7 +56,7 @@ export const avatarStrip = style({
   gap: '14px',
   padding: '14px',
   borderRadius: '12px',
-  backgroundColor: 'white',
+  backgroundColor: themeVars.bg.card,
   border: '1px solid var(--gray-4)',
   marginBottom: '8px',
 });
@@ -93,7 +93,7 @@ export const folderBadge = style({
 });
 
 export const fieldCard = style({
-  backgroundColor: 'white',
+  backgroundColor: themeVars.bg.card,
   border: '1px solid var(--gray-4)',
   borderRadius: '12px',
   padding: '12px 14px',
@@ -117,7 +117,7 @@ export const fieldValue = style({
 export const fieldValueMono = style({
   fontSize: '13px',
   color: 'var(--gray-12)',
-  fontFamily: 'monospace',
+  fontFamily: '"JetBrains Mono Variable", "JetBrains Mono", monospace',
   letterSpacing: '0.05em',
   minHeight: '18px',
 });
@@ -143,7 +143,7 @@ export const deleteOverlay = style({
 export const deleteSheet = style({
   width: '100%',
   maxWidth: '420px',
-  backgroundColor: 'white',
+  backgroundColor: themeVars.bg.card,
   borderRadius: '16px',
   padding: '20px',
   display: 'flex',

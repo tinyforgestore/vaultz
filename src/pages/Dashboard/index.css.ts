@@ -18,7 +18,9 @@ export const container = style({
 export const topPanel = style({
   flexShrink: 0,
   padding: '20px 12px 10px 12px',
+  backgroundColor: themeVars.bg.panel,
   borderBottom: '1px solid var(--gray-4)',
+  boxShadow: themeVars.shadow.topPanel,
   marginBottom: '4px',
 });
 
@@ -121,7 +123,7 @@ export const mainContent = style({
   flex: 1,
   minHeight: 0,
   overflow: 'hidden',
-  background: themeVars.pageBackground,
+  background: themeVars.bg.page,
   position: 'relative',
 });
 

@@ -11,6 +11,7 @@ interface PasswordCardProps {
   password: Password;
   isSelectionMode: boolean;
   isSelected: boolean;
+  isKeyboardSelected: boolean;
   copiedId: string | null;
   showFolderTag: boolean;
   folderName: string | undefined;
@@ -19,12 +20,14 @@ interface PasswordCardProps {
   onCopyPassword: () => void;
   onToggleFavorite: () => void;
   onToggleSelection: () => void;
+  onSelect: () => void;
 }
 
 export const PasswordCard = memo(function PasswordCard({
   password,
   isSelectionMode,
   isSelected,
+  isKeyboardSelected,
   copiedId,
   showFolderTag,
   folderName,
@@ -33,14 +36,23 @@ export const PasswordCard = memo(function PasswordCard({
   onCopyPassword,
   onToggleFavorite,
   onToggleSelection,
+  onSelect,
 }: PasswordCardProps) {
   const FolderIconComp = FOLDER_ICON_MAP[folderIcon || 'folder'] || FOLDER_ICON_MAP['folder'];
 
   return (
     <Card
       size="1"
-      className={clsx(styles.passwordCard, isSelectionMode && isSelected && styles.selectedCard)}
+      tabIndex={0}
+      className={clsx(
+        styles.passwordCard,
+        isSelectionMode && isSelected && styles.selectedCard,
+        isKeyboardSelected && styles.cardFocused,
+      )}
+      data-selected={isKeyboardSelected || undefined}
+      aria-selected={isKeyboardSelected}
       onClick={() => isSelectionMode ? onToggleSelection() : onCardClick()}
+      onMouseEnter={onSelect}
     >
       <Flex align="center" gap="3">
         {isSelectionMode && (

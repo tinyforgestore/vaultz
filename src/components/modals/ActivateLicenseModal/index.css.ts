@@ -1,4 +1,5 @@
 import { style } from '@vanilla-extract/css';
+import { themeVars } from '@/styles/theme.css';
 
 export const overlay = style({
   position: 'fixed',
@@ -13,7 +14,7 @@ export const overlay = style({
 });
 
 export const content = style({
-  backgroundColor: 'white',
+  backgroundColor: themeVars.bg.card,
   borderRadius: '16px',
   padding: '32px 28px',
   width: '360px',
