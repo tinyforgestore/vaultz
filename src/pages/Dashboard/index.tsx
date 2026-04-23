@@ -95,7 +95,7 @@ export default function Dashboard() {
             </div>
 
             <TextField.Root
-              ref={searchInputRef as RefObject<HTMLDivElement>}
+              ref={searchInputRef as React.Ref<HTMLInputElement>}
               placeholder="Search passwords..."
               size="2"
               className={styles.searchContainer}

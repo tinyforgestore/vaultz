@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 
 export function resolveSearchInput(
-  ref: React.RefObject<HTMLInputElement | HTMLElement>,
+  ref: React.RefObject<HTMLInputElement | HTMLElement | null>,
 ): HTMLInputElement | null {
   const el = ref.current;
   if (!el) return null;
@@ -15,7 +15,7 @@ interface UseKeyboardNavOptions {
   selectedIndex: number;
   isAnyModalOpen: boolean;
   isSelectionMode: boolean;
-  searchInputRef: React.RefObject<HTMLInputElement | HTMLElement>;
+  searchInputRef: React.RefObject<HTMLInputElement | HTMLElement | null>;
   onSelectIndex: (index: number) => void;
   onFocusSearch: () => void;
   onClearSearch: () => void;

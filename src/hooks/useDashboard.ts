@@ -36,7 +36,7 @@ export function useDashboard() {
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [passwordToDelete, setPasswordToDelete] = useState<Password | null>(null);
-  const searchInputRef = useRef<HTMLInputElement | HTMLElement>(null);
+  const searchInputRef = useRef<HTMLInputElement | HTMLElement | null>(null);
   const setLicenseStatus = useSetAtom(licenseStatusAtom);
   const isPro = useAtomValue(isProAtom);
   const setActiveModal = useSetAtom(activeModalAtom);

@@ -29,7 +29,7 @@ vi.mock('@radix-ui/themes', async (importOriginal) => {
   type SelectTriggerProps = { 'aria-label'?: string };
   type SelectItemProps = { value: string; children?: React.ReactNode };
 
-  let MockSelectTrigger: (props: SelectTriggerProps) => null;
+  const MockSelectTrigger = (_props: SelectTriggerProps) => null;
 
   // Collect the aria-label from any Trigger child to use on the <select>
   function getAriaLabel(children: React.ReactNode): string {
@@ -55,7 +55,6 @@ vi.mock('@radix-ui/themes', async (importOriginal) => {
       children,
     );
   };
-  MockSelectTrigger = (_props: SelectTriggerProps) => null;
   const MockSelectContent = ({ children }: { children?: React.ReactNode }) =>
     React.createElement(React.Fragment, null, children);
   const MockSelectItem = ({ value, children }: SelectItemProps) =>
