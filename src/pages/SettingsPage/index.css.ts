@@ -2,7 +2,7 @@ import { style } from '@vanilla-extract/css';
 import { themeVars } from '@/styles/theme.css';
 
 export const container = style({
-  width: '490px',
+  width: '100%',
   height: '100vh',
   background: themeVars.bg.page,
   display: 'grid',
@@ -14,7 +14,7 @@ export const header = style({
   display: 'flex',
   alignItems: 'center',
   gap: '8px',
-  padding: '20px 12px 10px 12px',
+  padding: '36px 12px 10px 12px',
   backgroundColor: themeVars.bg.panel,
   borderBottom: '1px solid var(--gray-4)',
   flexShrink: 0,

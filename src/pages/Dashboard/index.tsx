@@ -71,7 +71,7 @@ export default function Dashboard() {
 
   return (
     <>
-      <Flex className={styles.container}>
+      <div className={styles.container}>
         <Flex direction="column" className={styles.mainContent}>
           <div className={styles.topPanel}>
             <div className={styles.brandRow} data-tauri-drag-region>
@@ -205,7 +205,7 @@ export default function Dashboard() {
           )}
 
         </Flex>
-      </Flex>
+      </div>
 
       {isCreatePasswordOpen && (
         <CreatePasswordModal

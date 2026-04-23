@@ -9,7 +9,7 @@ import {
 export { upgradeBannerText, upgradeBannerCta };
 
 export const container = style({
-  width: '490px',
+  width: '100%',
   height: '100vh',
   overflow: 'hidden',
   position: 'relative',
@@ -17,7 +17,7 @@ export const container = style({
 
 export const topPanel = style({
   flexShrink: 0,
-  padding: '20px 12px 10px 12px',
+  padding: '36px 12px 10px 12px',
   backgroundColor: themeVars.bg.panel,
   borderBottom: '1px solid var(--gray-4)',
   boxShadow: themeVars.shadow.topPanel,

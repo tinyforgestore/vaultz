@@ -21,7 +21,7 @@ describe('UpgradeToProModal', () => {
   it('calls openUrl when Buy Pro License is clicked', () => {
     render(<UpgradeToProModal onClose={vi.fn()} onActivate={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: /Buy Pro License/i }));
-    expect(openUrl).toHaveBeenCalledWith(expect.stringContaining('lemonsqueezy.com'));
+    expect(openUrl).toHaveBeenCalledWith('https://tinyforge.store/l/vaultz');
   });
 
   it('calls onActivate when activate link is clicked', () => {

@@ -4,7 +4,7 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 import * as styles from './index.css';
 import * as sharedStyles from '@/styles/shared.css';
 
-const LS_CHECKOUT_URL = 'https://tinyforgestore.lemonsqueezy.com/checkout/buy/1a249b54-4356-4b66-98e2-5ad796096efa';
+const LS_CHECKOUT_URL = 'https://tinyforge.store/l/vaultz';
 
 interface Props {
   onClose: () => void;

@@ -10,7 +10,7 @@ const shake = keyframes({
 });
 
 export const container = style({
-  width: '490px',
+  width: '100%',
   height: '100vh',
   background: themeVars.bg.page,
   display: 'flex',
