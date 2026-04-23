@@ -27,11 +27,13 @@ export default function SettingsPage() {
     isChangeMasterPasswordOpen,
     isExportVaultOpen,
     isDestroyVaultOpen,
+    isDeactivateLicenseOpen,
     isCreateFolderOpen,
     isDeleteFolderOpen,
     lockTimeout,
     lockTimeoutError,
     isPro,
+    licenseStatus,
     selectedFolder,
     editingFolder,
     folderFilter,
@@ -40,6 +42,7 @@ export default function SettingsPage() {
     setIsChangeMasterPasswordOpen,
     setIsExportVaultOpen,
     setIsDestroyVaultOpen,
+    setIsDeactivateLicenseOpen,
     setIsCreateFolderOpen,
     setIsDeleteFolderOpen,
     setSelectedFolder,
@@ -48,6 +51,7 @@ export default function SettingsPage() {
     handleChangeMasterPassword,
     handleExportVault,
     handleDestroyVault,
+    handleDeactivateLicense,
     handleAddFolder,
     handleEditFolder,
     handleCancelEdit,
@@ -56,6 +60,7 @@ export default function SettingsPage() {
     confirmChangeMasterPassword,
     confirmExportVault,
     confirmDestroyVault,
+    confirmDeactivateLicense,
     confirmCreateFolder,
     confirmEditFolder,
     confirmDeleteFolder,
@@ -73,8 +78,40 @@ export default function SettingsPage() {
 
       <div className={styles.contentArea} ref={contentRef} tabIndex={-1}>
         <Flex direction="column" gap="3">
-          {/* License (free only) — first card */}
-          {!isPro && (
+          {/* License — first card */}
+          {isPro ? (
+            <Card size="1">
+              <Flex direction="column" gap="2">
+                <Heading size="2">
+                  <Flex as="span" align="center" gap="1"><Crown size={14} color="var(--amber-9)" /> Pro License</Flex>
+                </Heading>
+                {licenseStatus?.activation_usage != null && licenseStatus?.activation_limit != null && (
+                  <Text size="1" color="gray">
+                    {licenseStatus.activation_usage} of {licenseStatus.activation_limit} devices activated
+                  </Text>
+                )}
+                {isDeactivateLicenseOpen ? (
+                  <>
+                    <Text size="2" color="gray">
+                      This will deactivate your license on this device. You can re-activate it later.
+                    </Text>
+                    <Flex gap="2">
+                      <Button size="1" variant="soft" color="gray" onClick={() => setIsDeactivateLicenseOpen(false)} className={styles.dangerActionButton}>
+                        Cancel
+                      </Button>
+                      <Button size="1" color="red" onClick={confirmDeactivateLicense} className={styles.dangerActionButton}>
+                        Deactivate
+                      </Button>
+                    </Flex>
+                  </>
+                ) : (
+                  <Button size="1" variant="soft" color="red" onClick={handleDeactivateLicense}>
+                    Deactivate License
+                  </Button>
+                )}
+              </Flex>
+            </Card>
+          ) : (
             <Card size="1" className={styles.upgradeCard}>
               <Flex direction="column" gap="2">
                 <Heading size="2">

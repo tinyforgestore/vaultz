@@ -32,7 +32,7 @@ describe('ActivateLicenseModal', () => {
   it('renders the heading and input', () => {
     renderModal();
     expect(screen.getByText('Activate Pro License')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('XXXX-XXXX-XXXX-XXXX')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Paste your license key here')).toBeInTheDocument();
   });
 
   it('Activate button is disabled when input is empty', () => {
@@ -43,7 +43,7 @@ describe('ActivateLicenseModal', () => {
 
   it('Activate button is enabled when key is typed', () => {
     renderModal();
-    fireEvent.change(screen.getByPlaceholderText('XXXX-XXXX-XXXX-XXXX'), {
+    fireEvent.change(screen.getByPlaceholderText('Paste your license key here'), {
       target: { value: 'ABCD-1234-EFGH-5678' },
     });
     const btn = screen.getByRole('button', { name: /activate/i });
@@ -67,7 +67,7 @@ describe('ActivateLicenseModal', () => {
   it('shows error text when invoke rejects', async () => {
     mockInvoke.mockRejectedValueOnce(new Error('Invalid key'));
     renderModal();
-    fireEvent.change(screen.getByPlaceholderText('XXXX-XXXX-XXXX-XXXX'), {
+    fireEvent.change(screen.getByPlaceholderText('Paste your license key here'), {
       target: { value: 'BAD-KEY' },
     });
     fireEvent.click(screen.getByRole('button', { name: /activate/i }));

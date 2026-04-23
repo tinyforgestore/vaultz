@@ -48,7 +48,10 @@ CREATE TABLE IF NOT EXISTS passwords (
 CREATE TABLE IF NOT EXISTS license (
     id INTEGER PRIMARY KEY CHECK (id = 1),
     license_key TEXT NOT NULL,
-    license_validated_at INTEGER
+    license_validated_at INTEGER,
+    license_instance_id TEXT,
+    activation_usage INTEGER,
+    activation_limit INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS settings (
@@ -132,6 +135,27 @@ impl Database {
                     id INTEGER PRIMARY KEY CHECK (id = 1),
                     lock_timeout_minutes INTEGER
                 );",
+            )?;
+        }
+
+        let has_instance_id: bool = self
+            .conn
+            .prepare("SELECT license_instance_id FROM license LIMIT 0")
+            .is_ok();
+        if !has_instance_id {
+            self.conn.execute_batch(
+                "ALTER TABLE license ADD COLUMN license_instance_id TEXT;",
+            )?;
+        }
+
+        let has_activation_counts: bool = self
+            .conn
+            .prepare("SELECT activation_usage FROM license LIMIT 0")
+            .is_ok();
+        if !has_activation_counts {
+            self.conn.execute_batch(
+                "ALTER TABLE license ADD COLUMN activation_usage INTEGER;
+                 ALTER TABLE license ADD COLUMN activation_limit INTEGER;",
             )?;
         }
 

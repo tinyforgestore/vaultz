@@ -66,6 +66,7 @@ pub fn run() {
             commands::vault::destroy_vault,
             commands::license::activate_license,
             commands::license::validate_license,
+            commands::license::deactivate_license,
             commands::license::get_license_status,
             commands::license::check_limit_status,
             commands::settings::get_lock_timeout,

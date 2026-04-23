@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAtomValue, useSetAtom } from 'jotai';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { invoke } from '@tauri-apps/api/core';
 import { save } from '@tauri-apps/plugin-dialog';
 import { VAULT_FILE_FILTER } from '@/constants/vault';
@@ -12,9 +12,10 @@ export function useSettings() {
   const [isChangeMasterPasswordOpen, setIsChangeMasterPasswordOpen] = useState(false);
   const [isExportVaultOpen, setIsExportVaultOpen] = useState(false);
   const [isDestroyVaultOpen, setIsDestroyVaultOpen] = useState(false);
+  const [isDeactivateLicenseOpen, setIsDeactivateLicenseOpen] = useState(false);
   const [lockTimeout, setLockTimeout] = useState<number | null>(null);
   const [lockTimeoutError, setLockTimeoutError] = useState<string | null>(null);
-  const setLicenseStatus = useSetAtom(licenseStatusAtom);
+  const [licenseStatus, setLicenseStatus] = useAtom(licenseStatusAtom);
   const isPro = useAtomValue(isProAtom);
   const setActiveModal = useSetAtom(activeModalAtom);
 
@@ -25,13 +26,18 @@ export function useSettings() {
   const folderManager = useFolderManager();
 
   useEffect(() => {
+    // get_license_status first for fast initial render, then chain validate → refresh
+    // so the final get_license_status always runs after validate stores any new counts.
     invoke<LicenseStatus>('get_license_status')
       .then((status) => setLicenseStatus(status))
-      .catch(() => setLicenseStatus(null));
-
-    invoke<boolean>('validate_license')
-      .then((isActive) => setLicenseStatus({ is_active: isActive }))
-      .catch(() => { /* keep status from above */ });
+      .catch(() => setLicenseStatus(null))
+      .finally(() => {
+        invoke<boolean>('validate_license')
+          .catch(() => {})
+          .then(() => invoke<LicenseStatus>('get_license_status'))
+          .then((status) => setLicenseStatus(status ?? null))
+          .catch(() => {});
+      });
 
     invoke<number | null>('get_lock_timeout')
       .then((val) => setLockTimeout(val))
@@ -56,6 +62,7 @@ export function useSettings() {
   const handleChangeMasterPassword = () => setIsChangeMasterPasswordOpen(true);
   const handleExportVault = () => setIsExportVaultOpen(true);
   const handleDestroyVault = () => setIsDestroyVaultOpen(true);
+  const handleDeactivateLicense = () => setIsDeactivateLicenseOpen(true);
 
   const confirmDestroyVault = () => {
     return invoke('destroy_vault')
@@ -65,6 +72,17 @@ export function useSettings() {
       })
       .catch((err: unknown) => {
         console.error('Error destroying vault:', err);
+      });
+  };
+
+  const confirmDeactivateLicense = () => {
+    return invoke('deactivate_license')
+      .then(() => {
+        setLicenseStatus({ is_active: false });
+        setIsDeactivateLicenseOpen(false);
+      })
+      .catch((err: unknown) => {
+        console.error('Error deactivating license:', err);
       });
   };
 
@@ -98,23 +116,28 @@ export function useSettings() {
     isChangeMasterPasswordOpen,
     isExportVaultOpen,
     isDestroyVaultOpen,
+    isDeactivateLicenseOpen,
     lockTimeout,
     lockTimeoutError,
     isPro,
+    licenseStatus,
     setActiveModal,
     ...folderManager,
 
     setIsChangeMasterPasswordOpen,
     setIsExportVaultOpen,
     setIsDestroyVaultOpen,
+    setIsDeactivateLicenseOpen,
 
     handleBack,
     handleChangeMasterPassword,
     handleExportVault,
     handleDestroyVault,
+    handleDeactivateLicense,
     handleSetLockTimeout,
     confirmChangeMasterPassword,
     confirmExportVault,
     confirmDestroyVault,
+    confirmDeactivateLicense,
   };
 }

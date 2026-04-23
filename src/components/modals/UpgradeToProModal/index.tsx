@@ -4,7 +4,7 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 import * as styles from './index.css';
 import * as sharedStyles from '@/styles/shared.css';
 
-const GUMROAD_PRODUCT_URL = 'https://tinyforgestore.gumroad.com/l/vaultz';
+const LS_CHECKOUT_URL = 'https://tinyforgestore.lemonsqueezy.com/checkout/buy/1a249b54-4356-4b66-98e2-5ad796096efa';
 
 interface Props {
   onClose: () => void;
@@ -13,7 +13,7 @@ interface Props {
 
 export default function UpgradeToProModal({ onClose, onActivate }: Props) {
   const handleBuy = () => {
-    openUrl(GUMROAD_PRODUCT_URL);
+    openUrl(LS_CHECKOUT_URL);
   };
 
   return (
@@ -33,7 +33,7 @@ export default function UpgradeToProModal({ onClose, onActivate }: Props) {
 
         <Flex direction="column" gap="2" className={sharedStyles.fullWidth}>
           <Button size="3" className={sharedStyles.fullWidth} onClick={handleBuy}>
-            Buy on Gumroad
+            Buy Pro License
           </Button>
         </Flex>
 

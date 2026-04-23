@@ -90,7 +90,7 @@ describe('GlobalModals', () => {
 
   it('ActivateLicenseModal onSuccess transitions to "proWelcome" and sets licenseStatus', async () => {
     const { store } = renderGlobalModals('activate');
-    fireEvent.change(screen.getByPlaceholderText('XXXX-XXXX-XXXX-XXXX'), {
+    fireEvent.change(screen.getByPlaceholderText('Paste your license key here'), {
       target: { value: 'ABCD-1234-EFGH-5678' },
     });
     fireEvent.click(screen.getByRole('button', { name: /^Activate$/i }));
@@ -132,7 +132,7 @@ describe('GlobalModals', () => {
   it('ActivateLicenseModal shows error when activation fails', async () => {
     mockInvoke.mockRejectedValueOnce(new Error('Invalid license key'));
     renderGlobalModals('activate');
-    fireEvent.change(screen.getByPlaceholderText('XXXX-XXXX-XXXX-XXXX'), {
+    fireEvent.change(screen.getByPlaceholderText('Paste your license key here'), {
       target: { value: 'BAD-KEY-1234' },
     });
     fireEvent.click(screen.getByRole('button', { name: /^Activate$/i }));

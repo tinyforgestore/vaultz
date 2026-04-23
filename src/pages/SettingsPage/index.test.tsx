@@ -90,8 +90,9 @@ function renderSettings(folders: Folder[] = [], isPro = false) {
   }
   mockInvoke.mockImplementation((cmd: unknown) => {
     if (cmd === 'check_limit_status') return Promise.resolve({ passwords_at_limit: false, folders_at_limit: false });
-    if (cmd === 'get_license_status') return Promise.resolve(isPro ? { is_active: true } : null);
+    if (cmd === 'get_license_status') return Promise.resolve(isPro ? { is_active: true, activation_usage: 1, activation_limit: 3 } : null);
     if (cmd === 'validate_license') return Promise.resolve(isPro ? true : false);
+    if (cmd === 'deactivate_license') return Promise.resolve(undefined);
     if (cmd === 'get_passwords') return Promise.resolve([]);
     if (cmd === 'get_lock_timeout') return Promise.resolve(5);
     if (cmd === 'set_lock_timeout') return Promise.resolve(undefined);
@@ -257,6 +258,88 @@ describe('SettingsPage', () => {
   it('shows Activate Pro License button when not Pro', async () => {
     renderSettings([], false);
     expect(await screen.findByText('Activate Pro License')).toBeInTheDocument();
+  });
+
+  it('shows Deactivate License button when isPro', async () => {
+    renderSettings([], true);
+    expect(await screen.findByRole('button', { name: /Deactivate License/i })).toBeInTheDocument();
+  });
+
+  it('shows device activation count in Pro License card when counts are available', async () => {
+    const store = createStore();
+    store.set(licenseStatusAtom, { is_active: true, activation_usage: 2, activation_limit: 5 });
+    mockInvoke.mockImplementation((cmd: unknown) => {
+      if (cmd === 'check_limit_status') return Promise.resolve({ passwords_at_limit: false, folders_at_limit: false });
+      if (cmd === 'get_license_status') return Promise.resolve({ is_active: true, activation_usage: 2, activation_limit: 5 });
+      if (cmd === 'validate_license') return Promise.resolve(true);
+      if (cmd === 'get_passwords') return Promise.resolve([]);
+      if (cmd === 'get_lock_timeout') return Promise.resolve(5);
+      return Promise.resolve(undefined);
+    });
+    render(
+      <Theme>
+        <MemoryRouter>
+          <Provider store={store}>
+            <SettingsPage />
+          </Provider>
+        </MemoryRouter>
+      </Theme>
+    );
+    expect(await screen.findByText('2 of 5 devices activated')).toBeInTheDocument();
+  });
+
+  it('clicking Deactivate License shows confirmation text', async () => {
+    const user = userEvent.setup();
+    renderSettings([], true);
+
+    const deactivateBtn = await screen.findByRole('button', { name: /Deactivate License/i });
+    await user.click(deactivateBtn);
+
+    expect(
+      await screen.findByText(/This will deactivate your license on this device/)
+    ).toBeInTheDocument();
+  });
+
+  it('Cancel in deactivate confirmation hides it', async () => {
+    const user = userEvent.setup();
+    renderSettings([], true);
+
+    const deactivateBtn = await screen.findByRole('button', { name: /Deactivate License/i });
+    await user.click(deactivateBtn);
+
+    expect(
+      await screen.findByText(/This will deactivate your license on this device/)
+    ).toBeInTheDocument();
+
+    const cancelBtn = screen.getByRole('button', { name: /^Cancel$/i });
+    await user.click(cancelBtn);
+
+    await waitFor(() => {
+      expect(
+        screen.queryByText(/This will deactivate your license on this device/)
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  it('confirming deactivation calls deactivate_license invoke', async () => {
+    const user = userEvent.setup();
+    renderSettings([], true);
+
+    const deactivateBtn = await screen.findByRole('button', { name: /Deactivate License/i });
+    await user.click(deactivateBtn);
+
+    expect(
+      await screen.findByText(/This will deactivate your license on this device/)
+    ).toBeInTheDocument();
+
+    const confirmBtn = screen.getByRole('button', { name: /^Deactivate$/i });
+    await act(async () => {
+      await user.click(confirmBtn);
+    });
+
+    await waitFor(() => {
+      expect(mockInvoke).toHaveBeenCalledWith('deactivate_license');
+    });
   });
 
   it('back button is present and clickable', async () => {

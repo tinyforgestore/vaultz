@@ -1,5 +1,7 @@
 export interface LicenseStatus {
   is_active: boolean;
+  activation_usage?: number;
+  activation_limit?: number;
 }
 
 export interface LimitStatus {

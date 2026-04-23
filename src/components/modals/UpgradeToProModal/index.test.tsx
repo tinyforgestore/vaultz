@@ -18,10 +18,10 @@ describe('UpgradeToProModal', () => {
     expect(screen.getByText('Unlimited folders')).toBeInTheDocument();
   });
 
-  it('calls openUrl when Buy on Gumroad is clicked', () => {
+  it('calls openUrl when Buy Pro License is clicked', () => {
     render(<UpgradeToProModal onClose={vi.fn()} onActivate={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: /Buy on Gumroad/i }));
-    expect(openUrl).toHaveBeenCalledWith(expect.stringContaining('gumroad.com'));
+    fireEvent.click(screen.getByRole('button', { name: /Buy Pro License/i }));
+    expect(openUrl).toHaveBeenCalledWith(expect.stringContaining('lemonsqueezy.com'));
   });
 
   it('calls onActivate when activate link is clicked', () => {

@@ -31,7 +31,7 @@ export default function ActivateLicenseModal({
         <Flex direction="column" gap="2">
           <TextField.Root
             size="2"
-            placeholder="XXXX-XXXX-XXXX-XXXX"
+            placeholder="Paste your license key here"
             value={keyInput}
             onChange={(e) => setKeyInput(e.target.value)}
             disabled={activating}
@@ -50,7 +50,7 @@ export default function ActivateLicenseModal({
         </Button>
 
         <button className={styles.buyLink} onClick={onBuyInstead}>
-          Don't have a license yet? Buy on Gumroad →
+          Don't have a license yet? Buy a license →
         </button>
       </div>
     </div>

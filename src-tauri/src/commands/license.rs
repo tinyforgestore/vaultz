@@ -1,47 +1,102 @@
+use gethostname::gethostname;
 use serde::{Deserialize, Serialize};
 use tauri::State;
 
 use crate::database::Database;
 use crate::state::{with_db, DbState};
 
-const PRODUCT_ID: &str = "OqW5bpeiBnl32UJLMJsUTg==";
-const GUMROAD_VERIFY_URL: &str = "https://api.gumroad.com/v2/licenses/verify";
+const LS_ACTIVATE_URL: &str = "https://api.lemonsqueezy.com/v1/licenses/activate";
+const LS_VALIDATE_URL: &str = "https://api.lemonsqueezy.com/v1/licenses/validate";
+const LS_DEACTIVATE_URL: &str = "https://api.lemonsqueezy.com/v1/licenses/deactivate";
 
 pub const FREE_PASSWORD_LIMIT: i64 = 20;
 pub const FREE_FOLDER_LIMIT: i64 = 5;
 
+#[derive(Serialize)]
+struct LsActivateRequest<'a> {
+    license_key: &'a str,
+    instance_name: String,
+}
+
 #[derive(Deserialize)]
-struct GumroadVerifyResponse {
-    success: bool,
+struct LsActivateInstance {
+    id: String,
+}
+
+#[derive(Deserialize)]
+struct LsActivateLicenseKey {
+    activation_limit: Option<u32>,
+    activation_usage: Option<u32>,
+}
+
+#[derive(Deserialize)]
+struct LsActivateResponse {
+    activated: bool,
+    instance: Option<LsActivateInstance>,
+    license_key: Option<LsActivateLicenseKey>,
+}
+
+#[derive(Serialize)]
+struct LsValidateRequest<'a> {
+    license_key: &'a str,
+    instance_id: &'a str,
+}
+
+#[derive(Deserialize)]
+struct LsValidateLicenseKey {
+    activation_limit: Option<u32>,
+    activation_usage: Option<u32>,
+}
+
+#[derive(Deserialize)]
+struct LsValidateResponse {
+    valid: bool,
+    license_key: Option<LsValidateLicenseKey>,
+}
+
+#[derive(Serialize)]
+struct LsDeactivateRequest<'a> {
+    license_key: &'a str,
+    instance_id: &'a str,
 }
 
 #[derive(Serialize)]
 pub struct LicenseStatus {
     pub is_active: bool,
+    pub activation_usage: Option<u32>,
+    pub activation_limit: Option<u32>,
+}
+
+fn build_client() -> Result<reqwest::Client, String> {
+    reqwest::Client::builder()
+        .use_rustls_tls()
+        .build()
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub async fn activate_license(key: String, db_state: State<'_, DbState>) -> Result<(), String> {
-    let redacted = key.chars().rev().take(4).collect::<String>().chars().rev().collect::<String>();
+    let redacted = key
+        .chars()
+        .rev()
+        .take(4)
+        .collect::<String>()
+        .chars()
+        .rev()
+        .collect::<String>();
     eprintln!("[license] activate_license called with key: ...{}", redacted);
 
-    let client = reqwest::Client::builder()
-        .use_rustls_tls()
-        .build()
-        .map_err(|e| {
-            eprintln!("[license] failed to build HTTP client: {}", e);
-            e.to_string()
-        })?;
+    let client = build_client()?;
+    let hostname = gethostname().to_string_lossy().to_string();
 
-    let params = [
-        ("product_id", PRODUCT_ID),
-        ("license_key", key.as_str()),
-        ("increment_uses_count", "true"),
-    ];
+    let body = LsActivateRequest {
+        license_key: &key,
+        instance_name: hostname,
+    };
 
     let resp = client
-        .post(GUMROAD_VERIFY_URL)
-        .form(&params)
+        .post(LS_ACTIVATE_URL)
+        .json(&body)
         .send()
         .await
         .map_err(|e| {
@@ -49,89 +104,107 @@ pub async fn activate_license(key: String, db_state: State<'_, DbState>) -> Resu
             e.to_string()
         })?;
 
-    let body: GumroadVerifyResponse = resp.json().await.map_err(|e| {
-        eprintln!("[license] failed to parse response JSON: {}", e);
+    let parsed: LsActivateResponse = resp.json().await.map_err(|e| {
+        eprintln!("[license] failed to parse activate response: {}", e);
         e.to_string()
     })?;
 
-    if !body.success {
-        eprintln!("[license] Gumroad returned success=false");
-        return Err("License key is invalid".to_string());
+    if !parsed.activated {
+        eprintln!("[license] LS returned activated=false");
+        return Err("License key is invalid or already in use".to_string());
     }
 
-    eprintln!("[license] license valid — storing in DB");
+    let instance_id = match parsed.instance.as_ref() {
+        Some(inst) => inst.id.as_str(),
+        None => {
+            eprintln!("[license] LS returned activated=true but instance was null");
+            return Err("Activation failed: no instance ID returned".to_string());
+        }
+    };
+
+    eprintln!(
+        "[license] license valid — storing in DB with instance_id={}",
+        instance_id
+    );
     with_db(&db_state, |db| {
-        db.store_license(&key).map_err(|e| {
+        db.store_license(&key, instance_id).map_err(|e| {
             eprintln!("[license] failed to store license: {}", e);
             e.to_string()
-        })
+        })?;
+        if let Some(lk) = parsed.license_key.as_ref() {
+            let _ = db.store_activation_counts(lk.activation_usage, lk.activation_limit);
+        }
+        Ok(())
     })
 }
 
-/// Re-validates the stored license key against Gumroad.
-///
-/// Note: `increment_uses_count` is intentionally omitted here — it should only
-/// fire on first activation (`activate_license`), not on periodic re-validation.
 #[tauri::command]
 pub async fn validate_license(db_state: State<'_, DbState>) -> Result<bool, String> {
     const SEVEN_DAYS_SECS: i64 = 7 * 24 * 60 * 60;
 
-    // Read stored license info synchronously first.
     let license_info = with_db(&db_state, |db| {
         db.get_license().map_err(|e| e.to_string())
     })?;
 
-    let (key, validated_at) = match license_info {
+    let (key, validated_at, instance_id) = match license_info {
         None => return Ok(false),
-        Some((k, v)) => (k, v),
+        Some((k, v, i)) => (k, v, i),
+    };
+
+    let instance_id = match instance_id {
+        Some(id) if !id.is_empty() => id,
+        _ => return Ok(false),
     };
 
     let now = Database::now_unix();
-
-    // If within 7-day window, skip network call.
     if let Some(ts) = validated_at {
         if now - ts <= SEVEN_DAYS_SECS {
-            return Ok(true);
+            // Only skip the network call if activation counts are already cached.
+            // If counts are missing (e.g. license activated before this migration),
+            // fall through to populate them via a network validation.
+            let counts_cached = with_db(&db_state, |db| {
+                Ok(db.get_activation_counts().map(|(u, _)| u.is_some()).unwrap_or(false))
+            })
+            .unwrap_or(false);
+            if counts_cached {
+                return Ok(true);
+            }
         }
     }
 
-    // Outside window — re-validate against Gumroad.
-    let client = reqwest::Client::builder()
-        .use_rustls_tls()
-        .build()
-        .map_err(|e| e.to_string())?;
-
-    let params = [
-        ("product_id", PRODUCT_ID),
-        ("license_key", key.as_str()),
-    ];
+    let client = build_client().map_err(|e| e.to_string())?;
+    let body = LsValidateRequest {
+        license_key: &key,
+        instance_id: &instance_id,
+    };
 
     let result = client
-        .post(GUMROAD_VERIFY_URL)
-        .form(&params)
+        .post(LS_VALIDATE_URL)
+        .json(&body)
         .send()
         .await;
 
     match result {
         Ok(resp) => {
-            let body: GumroadVerifyResponse = resp.json().await.map_err(|e| e.to_string())?;
-            if body.success {
+            let parsed: LsValidateResponse = resp.json().await.map_err(|e| e.to_string())?;
+            if parsed.valid {
                 with_db(&db_state, |db| {
                     db.touch_license_validated_at().map_err(|e| e.to_string())
                 })?;
+                if let Some(lk) = parsed.license_key.as_ref() {
+                    let _ = with_db(&db_state, |db| {
+                        db.store_activation_counts(lk.activation_usage, lk.activation_limit)
+                            .map_err(|e| e.to_string())
+                    });
+                }
                 Ok(true)
             } else {
-                // Gumroad explicitly rejected the license (revoked/refunded) — evict it
-                // immediately so the next local check also returns inactive.
                 with_db(&db_state, |db| {
                     db.clear_license_validated_at().map_err(|e| e.to_string())
                 })?;
                 Ok(false)
             }
         }
-        // Network unreachable — treat as valid so a transient outage doesn't
-        // evict a legitimately activated license. The DB timestamp is not updated,
-        // so the next online re-validation will still contact Gumroad.
         Err(e) => {
             eprintln!("[license] validate_license network error: {}", e);
             Ok(true)
@@ -140,10 +213,52 @@ pub async fn validate_license(db_state: State<'_, DbState>) -> Result<bool, Stri
 }
 
 #[tauri::command]
+pub async fn deactivate_license(db_state: State<'_, DbState>) -> Result<(), String> {
+    let license_info = with_db(&db_state, |db| {
+        db.get_license().map_err(|e| e.to_string())
+    })?;
+
+    let (key, _, instance_id) = match license_info {
+        None => return Ok(()),
+        Some(info) => info,
+    };
+
+    let instance_id = match instance_id {
+        Some(id) if !id.is_empty() => id,
+        _ => {
+            // No instance_id — just clear the local DB row
+            return with_db(&db_state, |db| {
+                db.clear_license().map_err(|e| e.to_string())
+            });
+        }
+    };
+
+    let client = build_client()?;
+    let body = LsDeactivateRequest {
+        license_key: &key,
+        instance_id: &instance_id,
+    };
+
+    // Fire and forget: even if deactivation API call fails, clear the local record
+    let _ = client
+        .post(LS_DEACTIVATE_URL)
+        .json(&body)
+        .send()
+        .await;
+
+    with_db(&db_state, |db| {
+        db.clear_license().map_err(|e| e.to_string())
+    })
+}
+
+#[tauri::command]
 pub fn get_license_status(db_state: State<'_, DbState>) -> Result<LicenseStatus, String> {
     with_db(&db_state, |db| {
+        let (usage, limit) = db.get_activation_counts().unwrap_or((None, None));
         Ok(LicenseStatus {
             is_active: db.is_license_active(),
+            activation_usage: usage,
+            activation_limit: limit,
         })
     })
 }
