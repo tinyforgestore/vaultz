@@ -13,6 +13,8 @@ export const container = style({
   height: '100vh',
   overflow: 'hidden',
   position: 'relative',
+  display: 'flex',
+  flexDirection: 'column',
 });
 
 export const topPanel = style({
