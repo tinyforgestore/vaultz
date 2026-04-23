@@ -9,7 +9,7 @@ import CreateFolderModal from '@/components/modals/CreateFolderModal';
 import EditFolderModal from '@/components/modals/EditFolderModal';
 import DeleteFolderModal from '@/components/modals/DeleteFolderModal';
 import { useSettings } from '@/hooks/useSettings';
-import { useTheme } from '@/hooks/useTheme';
+import { useTheme, Theme } from '@/hooks/useTheme';
 import { FOLDER_ICON_MAP } from '@/constants/folders';
 import * as styles from './index.css';
 
@@ -172,9 +172,10 @@ export default function SettingsPage() {
               </Heading>
               <Flex align="center" justify="between" gap="2">
                 <Text size="1" color="gray">Theme</Text>
-                <Select.Root value={theme} onValueChange={(val) => setTheme(val as 'light' | 'dark')}>
+                <Select.Root value={theme} onValueChange={(val) => setTheme(val as Theme)}>
                   <Select.Trigger aria-label="Theme" />
                   <Select.Content>
+                    <Select.Item value="system">System</Select.Item>
                     <Select.Item value="light">Light</Select.Item>
                     <Select.Item value="dark">Dark</Select.Item>
                   </Select.Content>

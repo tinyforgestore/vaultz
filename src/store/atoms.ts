@@ -242,4 +242,4 @@ export const changeMasterPasswordAtom = atom(
   }
 );
 
-export const themeAtom = atomWithStorage<'light' | 'dark'>('vaultz-theme', 'light');
+export const themeAtom = atomWithStorage<'light' | 'dark' | 'system'>('vaultz-theme', 'system');
