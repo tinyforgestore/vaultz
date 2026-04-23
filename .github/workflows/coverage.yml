@@ -8,6 +8,10 @@ on:
     paths-ignore:
       - 'coverage.json'
 
+concurrency:
+  group: coverage-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   coverage:
     name: Generate Coverage
