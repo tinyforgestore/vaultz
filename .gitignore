@@ -20,6 +20,16 @@ TICKETS.md
 scripts/*/target/
 rust_out
 
+# Claude Code internals
+.claude/
+
+# Coverage artifacts
+coverage/
+rust-coverage.json
+
+# Local scripts
+scripts/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
