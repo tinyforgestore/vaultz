@@ -7,6 +7,7 @@ import '@radix-ui/themes/styles.css';
 import './global.css';
 import { Theme as RadixTheme } from '@radix-ui/themes';
 import { Provider } from 'jotai';
+import { StoreProvider } from '@/store';
 import { lightTheme, darkTheme } from '@/styles/theme.css';
 import { useTheme, Theme } from '@/hooks/useTheme';
 
@@ -45,7 +46,9 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     {/* Jotai Provider gives all hooks access to the shared global store */}
     <Provider>
-      <ThemedApp />
+      <StoreProvider>
+        <ThemedApp />
+      </StoreProvider>
     </Provider>
   </React.StrictMode>,
 );

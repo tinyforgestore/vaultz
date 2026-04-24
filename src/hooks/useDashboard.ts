@@ -1,11 +1,8 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { useSetAtom } from 'jotai';
 import { invoke } from '@tauri-apps/api/core';
 import {
-  foldersAtom,
-  allPasswordsAtom,
-  filteredPasswordsAtom,
   selectedFolderAtom,
   searchQueryAtom,
   createPasswordAtom,
@@ -13,13 +10,12 @@ import {
   favoriteAlertAtom,
   loadInitialDataAtom,
   licenseStatusAtom,
-  isProAtom,
   activeModalAtom,
   pendingLicenseKeyAtom,
   deletePasswordAtom,
   isLogoutConfirmAtom,
 } from '@/store/atoms';
-import { SPECIAL_FOLDERS, VIRTUAL_FOLDERS, isSpecialFolder, LIMIT_REACHED_PASSWORDS, LIMIT_REACHED_FOLDERS } from '@/constants/folders';
+import { isSpecialFolder, LIMIT_REACHED_PASSWORDS, LIMIT_REACHED_FOLDERS, SPECIAL_FOLDERS } from '@/constants/folders';
 import { CreatePasswordInput, CreateFolderInput, Password } from '@/types';
 import { LicenseStatus } from '@/types/license';
 import { useClipboard } from './useClipboard';
@@ -27,54 +23,32 @@ import { usePasswordSelection } from './usePasswordSelection';
 import { useCreateFolder } from './useCreateFolder';
 import { useLimitCheck } from './useLimitCheck';
 import { useKeyboardNav, resolveSearchInput } from './useKeyboardNav';
+import { usePasswordsStore, useFoldersStore, useLicenseStore, useSessionStore } from '@/store';
 
 const FAVORITES_ID = SPECIAL_FOLDERS.FAVORITES.toString();
 
 export function useDashboard() {
   const [isCreatePasswordOpen, setIsCreatePasswordOpen] = useState(false);
-  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useAtom(isLogoutConfirmAtom);
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [passwordToDelete, setPasswordToDelete] = useState<Password | null>(null);
   const searchInputRef = useRef<HTMLInputElement | HTMLElement | null>(null);
   const setLicenseStatus = useSetAtom(licenseStatusAtom);
-  const isPro = useAtomValue(isProAtom);
   const setActiveModal = useSetAtom(activeModalAtom);
-  const activeModal = useAtomValue(activeModalAtom);
   const setPendingLicenseKey = useSetAtom(pendingLicenseKeyAtom);
 
-  const realFolders = useAtomValue(foldersAtom);
-  const folders = useMemo(() => [...VIRTUAL_FOLDERS, ...realFolders], [realFolders]);
-  const allPasswords = useAtomValue(allPasswordsAtom);
-  const passwords = useAtomValue(filteredPasswordsAtom);
+  const { filteredPasswords: passwords, selectedFolder, searchQuery, favoriteAlert } = usePasswordsStore();
+  const { folders, visibleFolders, folderCountMap, folderNameMap, folderIconMap } = useFoldersStore();
+  const { isPro, activeModal } = useLicenseStore();
+  const { isLogoutConfirm: isLogoutConfirmOpen } = useSessionStore();
+  const setIsLogoutConfirmOpen = useSetAtom(isLogoutConfirmAtom);
 
-  const folderCountMap = useMemo(() => {
-    const map: Record<string, number> = {};
-    map[SPECIAL_FOLDERS.ALL.toString()] = allPasswords.length;
-    map[FAVORITES_ID] = 0;
-    for (const p of allPasswords) {
-      if (p.isFavorite) map[FAVORITES_ID]++;
-      map[p.folderId] = (map[p.folderId] || 0) + 1;
-    }
-    return map;
-  }, [allPasswords]);
-
-  const { folderNameMap, folderIconMap } = useMemo(() => {
-    const names: Record<string, string> = {};
-    const icons: Record<string, string> = {};
-    for (const f of realFolders) {
-      names[f.id] = f.name;
-      icons[f.id] = f.icon;
-    }
-    return { folderNameMap: names, folderIconMap: icons };
-  }, [realFolders]);
-
-  const [selectedFolder, setSelectedFolder] = useAtom(selectedFolderAtom);
-  const [searchQuery, setSearchQuery] = useAtom(searchQueryAtom);
+  const setSelectedFolder = useSetAtom(selectedFolderAtom);
+  const setSearchQuery = useSetAtom(searchQueryAtom);
   const createPassword = useSetAtom(createPasswordAtom);
   const toggleFavorite = useSetAtom(toggleFavoriteAtom);
   const deletePassword = useSetAtom(deletePasswordAtom);
-  const [favoriteAlert, setFavoriteAlert] = useAtom(favoriteAlertAtom);
+  const setFavoriteAlert = useSetAtom(favoriteAlertAtom);
   const loadData = useSetAtom(loadInitialDataAtom);
   const navigate = useNavigate();
 
@@ -141,10 +115,6 @@ export function useDashboard() {
   };
 
   const showFolderTag = isSpecialFolder(selectedFolder);
-  const visibleFolders = useMemo(
-    () => folders.filter(f => f.id !== FAVORITES_ID || (folderCountMap[FAVORITES_ID] ?? 0) > 0),
-    [folders, folderCountMap],
-  );
 
   const handleNextFolder = useCallback(() => {
     const idx = visibleFolders.findIndex(f => f.id === selectedFolder);

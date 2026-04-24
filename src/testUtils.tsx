@@ -3,6 +3,7 @@ import { createStore, Provider } from 'jotai';
 import { renderHook, type RenderHookOptions } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import type { Password, Folder } from '@/types';
+import { StoreProvider } from '@/store';
 
 export function createTestStore() {
   return createStore();
@@ -46,7 +47,9 @@ export function renderHookWithProviders<T>(
   const testStore = store ?? createTestStore();
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <MemoryRouter initialEntries={[initialPath]}>
-      <Provider store={testStore}>{children}</Provider>
+      <Provider store={testStore}>
+        <StoreProvider>{children}</StoreProvider>
+      </Provider>
     </MemoryRouter>
   );
   return { ...renderHook(hook, { wrapper, ...options }), store: testStore };

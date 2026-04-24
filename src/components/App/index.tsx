@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { MemoryRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from '@/pages/LoginPage';
 import Dashboard from '@/pages/Dashboard';
 import PasswordDetailsPage from '@/pages/PasswordDetailsPage';
@@ -29,9 +29,9 @@ function SessionWrapper() {
 
 function App() {
   return (
-    <BrowserRouter>
+    <MemoryRouter>
       <SessionWrapper />
-    </BrowserRouter>
+    </MemoryRouter>
   );
 }
 

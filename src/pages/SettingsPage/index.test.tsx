@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { Provider, createStore } from 'jotai';
 import { Theme } from '@radix-ui/themes';
+import type { ReactNode } from 'react';
 
 vi.mock('@tauri-apps/api/core');
 vi.mock('@tauri-apps/plugin-dialog', () => ({ save: vi.fn() }));
@@ -76,10 +77,30 @@ import SettingsPage from './index';
 import { foldersAtom, licenseStatusAtom, activeModalAtom } from '@/store/atoms';
 import { makeFolder } from '@/testUtils';
 import type { Folder } from '@/types';
+import { StoreProvider } from '@/store';
 
 const mockSave = vi.mocked(mockSaveImport);
 
 const mockInvoke = vi.mocked(invoke);
+
+/** Wraps `ui` in the full provider stack used by every SettingsPage test. */
+function renderWith(
+  store: ReturnType<typeof createStore>,
+  ui: ReactNode,
+  { initialEntries = ['/'] }: { initialEntries?: string[] } = {},
+) {
+  return render(
+    <Theme>
+      <MemoryRouter initialEntries={initialEntries}>
+        <Provider store={store}>
+          <StoreProvider>
+            {ui}
+          </StoreProvider>
+        </Provider>
+      </MemoryRouter>
+    </Theme>
+  );
+}
 
 function renderSettings(folders: Folder[] = [], isPro = false) {
   const store = createStore();
@@ -99,15 +120,7 @@ function renderSettings(folders: Folder[] = [], isPro = false) {
   });
   return {
     store,
-    ...render(
-      <Theme>
-        <MemoryRouter>
-          <Provider store={store}>
-            <SettingsPage />
-          </Provider>
-        </MemoryRouter>
-      </Theme>
-    ),
+    ...renderWith(store, <SettingsPage />),
   };
 }
 
@@ -275,15 +288,7 @@ describe('SettingsPage', () => {
       if (cmd === 'get_lock_timeout') return Promise.resolve(5);
       return Promise.resolve(undefined);
     });
-    render(
-      <Theme>
-        <MemoryRouter>
-          <Provider store={store}>
-            <SettingsPage />
-          </Provider>
-        </MemoryRouter>
-      </Theme>
-    );
+    renderWith(store, <SettingsPage />);
     expect(await screen.findByText('2 of 5 devices activated')).toBeInTheDocument();
   });
 
@@ -353,17 +358,13 @@ describe('SettingsPage', () => {
       return Promise.resolve(undefined);
     });
 
-    render(
-      <Theme>
-        <MemoryRouter initialEntries={['/settings']}>
-          <Provider store={store}>
-            <Routes>
-              <Route path="/settings" element={<SettingsPage />} />
-              <Route path="/dashboard" element={<div>Dashboard</div>} />
-            </Routes>
-          </Provider>
-        </MemoryRouter>
-      </Theme>
+    renderWith(
+      store,
+      <Routes>
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/dashboard" element={<div>Dashboard</div>} />
+      </Routes>,
+      { initialEntries: ['/settings'] },
     );
 
     const backBtn = screen.getByRole('button', { name: /go back/i });
@@ -688,15 +689,7 @@ describe('SettingsPage', () => {
       return Promise.resolve(undefined);
     });
 
-    render(
-      <Theme>
-        <MemoryRouter>
-          <Provider store={store}>
-            <SettingsPage />
-          </Provider>
-        </MemoryRouter>
-      </Theme>
-    );
+    renderWith(store, <SettingsPage />);
     await act(async () => {});
 
     const trigger = await screen.findByRole('combobox', { name: /Lock screen timeout/i });

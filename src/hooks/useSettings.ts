@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { useSetAtom } from 'jotai';
 import { invoke } from '@tauri-apps/api/core';
 import { save } from '@tauri-apps/plugin-dialog';
 import { VAULT_FILE_FILTER } from '@/constants/vault';
-import { changeMasterPasswordAtom, licenseStatusAtom, isProAtom, logoutAtom, activeModalAtom } from '@/store/atoms';
+import { changeMasterPasswordAtom, licenseStatusAtom, logoutAtom, activeModalAtom } from '@/store/atoms';
 import { LicenseStatus } from '@/types/license';
 import { useFolderManager } from './useFolderManager';
+import { useLicenseStore } from '@/store';
 
 export function useSettings() {
   const [isChangeMasterPasswordOpen, setIsChangeMasterPasswordOpen] = useState(false);
@@ -15,8 +16,8 @@ export function useSettings() {
   const [isDeactivateLicenseOpen, setIsDeactivateLicenseOpen] = useState(false);
   const [lockTimeout, setLockTimeout] = useState<number | null>(null);
   const [lockTimeoutError, setLockTimeoutError] = useState<string | null>(null);
-  const [licenseStatus, setLicenseStatus] = useAtom(licenseStatusAtom);
-  const isPro = useAtomValue(isProAtom);
+  const { licenseStatus, isPro } = useLicenseStore();
+  const setLicenseStatus = useSetAtom(licenseStatusAtom);
   const setActiveModal = useSetAtom(activeModalAtom);
 
   const changeMasterPassword = useSetAtom(changeMasterPasswordAtom);

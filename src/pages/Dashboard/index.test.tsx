@@ -14,6 +14,7 @@ vi.mock('@/services/sessionService', () => ({
 import { invoke } from '@tauri-apps/api/core';
 import Dashboard from './index';
 import GlobalModals from '@/components/GlobalModals';
+import { StoreProvider } from '@/store';
 import { allPasswordsAtom, foldersAtom, licenseStatusAtom, activeModalAtom, favoriteAlertAtom } from '@/store/atoms';
 import { makePassword, makeFolder } from '@/testUtils';
 import type { Password, Folder } from '@/types';
@@ -50,8 +51,10 @@ function renderDashboard(options: RenderDashboardOptions = {}) {
     ...render(
       <MemoryRouter>
         <Provider store={store}>
-          <Dashboard />
-          <GlobalModals />
+          <StoreProvider>
+            <Dashboard />
+            <GlobalModals />
+          </StoreProvider>
         </Provider>
       </MemoryRouter>
     ),
@@ -231,7 +234,9 @@ describe('Dashboard', () => {
     render(
       <MemoryRouter>
         <Provider store={store}>
-          <Dashboard />
+          <StoreProvider>
+            <Dashboard />
+          </StoreProvider>
         </Provider>
       </MemoryRouter>
     );
@@ -371,7 +376,9 @@ describe('Dashboard', () => {
     render(
       <MemoryRouter>
         <Provider store={store}>
-          <Dashboard />
+          <StoreProvider>
+            <Dashboard />
+          </StoreProvider>
         </Provider>
       </MemoryRouter>
     );
@@ -421,7 +428,9 @@ describe('Dashboard', () => {
     render(
       <MemoryRouter>
         <Provider store={store}>
-          <Dashboard />
+          <StoreProvider>
+            <Dashboard />
+          </StoreProvider>
         </Provider>
       </MemoryRouter>
     );
@@ -515,7 +524,9 @@ describe('Dashboard', () => {
     render(
       <MemoryRouter>
         <Provider store={store}>
-          <Dashboard />
+          <StoreProvider>
+            <Dashboard />
+          </StoreProvider>
         </Provider>
       </MemoryRouter>
     );
@@ -617,7 +628,9 @@ describe('Dashboard', () => {
     render(
       <MemoryRouter>
         <Provider store={store}>
-          <Dashboard />
+          <StoreProvider>
+            <Dashboard />
+          </StoreProvider>
         </Provider>
       </MemoryRouter>
     );
@@ -659,7 +672,9 @@ describe('Dashboard', () => {
     render(
       <MemoryRouter>
         <Provider store={store}>
-          <Dashboard />
+          <StoreProvider>
+            <Dashboard />
+          </StoreProvider>
         </Provider>
       </MemoryRouter>
     );
@@ -695,7 +710,9 @@ describe('Dashboard', () => {
     render(
       <MemoryRouter>
         <Provider store={store}>
-          <Dashboard />
+          <StoreProvider>
+            <Dashboard />
+          </StoreProvider>
         </Provider>
       </MemoryRouter>
     );
