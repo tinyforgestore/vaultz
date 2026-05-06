@@ -1,10 +1,11 @@
 use std::sync::Mutex;
 use std::time::SystemTime;
-use tauri::State;
+use tauri::{AppHandle, Emitter, State};
 
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 use password_hash::rand_core::{OsRng, RngCore};
 
+use crate::constants::{VAULT_LOCKED, VAULT_UNLOCKED};
 use crate::crypto::{derive_field_key, encrypt_field, verify_password_hash, ENC_PREFIX};
 use crate::state::{db_minutes_to_secs, with_db, DbState, SessionState};
 
@@ -55,6 +56,7 @@ fn migrate_encrypt_passwords(db_state: &State<DbState>, key: &[u8; 32]) -> Resul
 
 #[tauri::command]
 pub fn login(
+    app: AppHandle,
     password: String,
     db_state: State<DbState>,
     state: State<Mutex<SessionState>>,
@@ -87,14 +89,17 @@ pub fn login(
         session.field_key = Some(field_key);
         session.last_activity = Some(SystemTime::now());
         session.lock_timeout_secs = lock_timeout_secs;
+        drop(session);
+        let _ = app.emit(VAULT_UNLOCKED, ());
     }
 
     Ok(is_valid)
 }
 
 #[tauri::command]
-pub fn logout(state: State<Mutex<SessionState>>) {
+pub fn logout(app: AppHandle, state: State<Mutex<SessionState>>) {
     state.lock().unwrap().clear();
+    let _ = app.emit(VAULT_LOCKED, ());
 }
 
 #[tauri::command]

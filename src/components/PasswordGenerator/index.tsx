@@ -25,7 +25,7 @@ export default function PasswordGenerator({ onUsePassword, onCancel, isEmbedded 
     setIncludeSymbols,
     handleRegenerate,
     handleUsePassword,
-  } = usePasswordGenerator({ onUsePassword });
+  } = usePasswordGenerator({ onUsePassword, enableShortcuts: isEmbedded });
 
   const generatorContent = (
     <Flex direction="column" gap="3">

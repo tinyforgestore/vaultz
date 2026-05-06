@@ -24,6 +24,8 @@ export default defineConfig({
         '**/*.css.ts',
         'src/constants/**',
         'src/main.tsx',
+        'src/overlayMain.tsx',
+        'src/generatorMain.tsx',
         'src/testUtils.tsx',
         'src/vite-env.d.ts',
       ],

@@ -1,9 +1,14 @@
 use std::sync::Mutex;
-use tauri::State;
+use tauri::{AppHandle, Emitter, State};
 
+use crate::constants::PASSWORDS_CHANGED;
 use crate::crypto::{decrypt_field, encrypt_field};
 use crate::database::{CreatePasswordInput, PasswordEntry, UpdatePasswordInput};
 use crate::state::{parse_id, with_db, DbState, SessionState};
+
+fn emit_passwords_changed(app: &AppHandle) {
+    let _ = app.emit(PASSWORDS_CHANGED, ());
+}
 
 fn get_field_key(session: &State<Mutex<SessionState>>) -> Result<[u8; 32], String> {
     session
@@ -54,6 +59,7 @@ pub fn get_password_by_id(
 
 #[tauri::command]
 pub fn create_password(
+    app: AppHandle,
     input: CreatePasswordInput,
     db_state: State<DbState>,
     session_state: State<Mutex<SessionState>>,
@@ -64,7 +70,7 @@ pub fn create_password(
         notes: input.notes.as_deref().map(|n| encrypt_field(&key, n)).transpose()?,
         ..input
     };
-    with_db(&db_state, |db| {
+    let result = with_db(&db_state, |db| {
         // Enforce free-tier limit of 20 passwords unless a valid license is active.
         if !db.is_license_active() {
             let count = db.count_passwords().map_err(|e| e.to_string())?;
@@ -74,11 +80,16 @@ pub fn create_password(
         }
         let entry = db.create_password(&enc_input).map_err(|e| e.to_string())?;
         decrypt_entry(&key, entry)
-    })
+    });
+    if result.is_ok() {
+        emit_passwords_changed(&app);
+    }
+    result
 }
 
 #[tauri::command]
 pub fn update_password(
+    app: AppHandle,
     id: String,
     mut updates: UpdatePasswordInput,
     db_state: State<DbState>,
@@ -91,27 +102,39 @@ pub fn update_password(
     if let Some(ref n) = updates.notes {
         updates.notes = Some(encrypt_field(&key, n)?);
     }
-    with_db(&db_state, |db| {
+    let result = with_db(&db_state, |db| {
         let entry = db
             .update_password(parse_id(&id)?, &updates)
             .map_err(|e| e.to_string())?;
         decrypt_entry(&key, entry)
-    })
+    });
+    if result.is_ok() {
+        emit_passwords_changed(&app);
+    }
+    result
 }
 
 #[tauri::command]
-pub fn delete_password(id: String, db_state: State<DbState>) -> Result<(), String> {
-    with_db(&db_state, |db| {
+pub fn delete_password(app: AppHandle, id: String, db_state: State<DbState>) -> Result<(), String> {
+    let result = with_db(&db_state, |db| {
         db.delete_password(parse_id(&id)?).map_err(|e| e.to_string())
-    })
+    });
+    if result.is_ok() {
+        emit_passwords_changed(&app);
+    }
+    result
 }
 
 #[tauri::command]
-pub fn delete_passwords(ids: Vec<String>, db_state: State<DbState>) -> Result<(), String> {
-    with_db(&db_state, |db| {
+pub fn delete_passwords(app: AppHandle, ids: Vec<String>, db_state: State<DbState>) -> Result<(), String> {
+    let result = with_db(&db_state, |db| {
         let id_nums: Vec<i64> = ids.iter().map(|id| parse_id(id)).collect::<Result<_, _>>()?;
         db.delete_passwords(&id_nums).map_err(|e| e.to_string())
-    })
+    });
+    if result.is_ok() {
+        emit_passwords_changed(&app);
+    }
+    result
 }
 
 #[tauri::command]

@@ -10,8 +10,10 @@
     "frontendDist": "../dist"
   },
   "app": {
+    "macOSPrivateApi": true,
     "windows": [
       {
+        "label": "main",
         "width": 500,
         "height": 600,
         "resizable": false,
@@ -19,6 +21,34 @@
         "center": true,
         "titleBarStyle": "Overlay",
         "hiddenTitle": true
+      },
+      {
+        "label": "overlay-search",
+        "url": "overlay.html",
+        "title": "",
+        "width": 640,
+        "height": 520,
+        "visible": false,
+        "resizable": false,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "center": true
+      },
+      {
+        "label": "overlay-generator",
+        "url": "generator.html",
+        "title": "",
+        "width": 480,
+        "height": 340,
+        "visible": false,
+        "resizable": false,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "center": true
       }
     ],
     "security": {
