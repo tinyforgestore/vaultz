@@ -35,6 +35,7 @@ export default function CreatePasswordModal({ onConfirm, onCancel, initialPasswo
     setFolder,
     setShowGenerator,
     handleUseGeneratedPassword,
+    handleRecordGenerated,
     confirmCreateFolder,
     handleSubmit,
   } = useCreatePassword({ onConfirm, initialPassword, initialData });
@@ -107,6 +108,7 @@ export default function CreatePasswordModal({ onConfirm, onCancel, initialPasswo
                 <PasswordGenerator
                   onUsePassword={handleUseGeneratedPassword}
                   onCancel={() => setShowGenerator(false)}
+                  onRecordGenerated={handleRecordGenerated}
                   isEmbedded
                 />
               </Box>

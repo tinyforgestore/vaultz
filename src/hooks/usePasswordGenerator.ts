@@ -4,12 +4,21 @@ import { buildPassword } from '@/utils/passwordGenerator';
 interface UsePasswordGeneratorProps {
   onUsePassword: (password: string) => void;
   enableShortcuts?: boolean;
+  /**
+   * Called whenever the user *commits* to a generated password (via
+   * "Use This Password" or the Enter shortcut). NOT called on slider tick,
+   * checkbox toggle, or regenerate — only when the user explicitly elects
+   * to use the value. Implementations should record the password to history.
+   */
+  onRecordGenerated?: (password: string) => void;
+  /** Called whenever a new password is generated (initial mount + regenerate + option toggles). */
+  onGeneratedChange?: (password: string) => void;
 }
 
 const MIN_LENGTH = 8;
 const MAX_LENGTH = 32;
 
-export function usePasswordGenerator({ onUsePassword, enableShortcuts = false }: UsePasswordGeneratorProps) {
+export function usePasswordGenerator({ onUsePassword, enableShortcuts = false, onRecordGenerated, onGeneratedChange }: UsePasswordGeneratorProps) {
   const [generatedPassword, setGeneratedPassword] = useState('');
   const [length, setLength] = useState([16]);
   const [includeUppercase, setIncludeUppercase] = useState(true);
@@ -24,12 +33,17 @@ export function usePasswordGenerator({ onUsePassword, enableShortcuts = false }:
   const handleRegenerate = generatePassword;
 
   const handleUsePassword = () => {
+    onRecordGenerated?.(generatedPassword);
     onUsePassword(generatedPassword);
   };
 
   useEffect(() => {
     setGeneratedPassword(buildPassword(length[0], includeUppercase, includeLowercase, includeNumbers, includeSymbols));
   }, [length, includeUppercase, includeLowercase, includeNumbers, includeSymbols]);
+
+  useEffect(() => {
+    if (generatedPassword) onGeneratedChange?.(generatedPassword);
+  }, [generatedPassword, onGeneratedChange]);
 
   useEffect(() => {
     if (!enableShortcuts) return;
@@ -40,6 +54,7 @@ export function usePasswordGenerator({ onUsePassword, enableShortcuts = false }:
       }
       if (e.key === 'Enter') {
         e.preventDefault();
+        onRecordGenerated?.(generatedPassword);
         onUsePassword(generatedPassword);
         return;
       }
@@ -80,7 +95,7 @@ export function usePasswordGenerator({ onUsePassword, enableShortcuts = false }:
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enableShortcuts, generatedPassword, onUsePassword]);
+  }, [enableShortcuts, generatedPassword, onUsePassword, onRecordGenerated]);
 
   return {
     generatedPassword,

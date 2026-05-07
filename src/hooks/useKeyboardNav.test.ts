@@ -52,6 +52,7 @@ function makeOptions(overrides: Record<string, unknown> = {}) {
       onNewPassword: vi.fn(),
       onNewFolder: vi.fn(),
       onToggleItemSelection: vi.fn(),
+      onOpenHistory: vi.fn(),
     },
     searchInputRef,
     searchInput,

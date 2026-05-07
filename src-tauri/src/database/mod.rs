@@ -2,6 +2,7 @@ use rusqlite::{Connection, Result as SqlResult};
 use std::path::PathBuf;
 
 mod folders;
+pub mod generated_passwords;
 mod license;
 mod master;
 mod passwords;
@@ -57,6 +58,12 @@ CREATE TABLE IF NOT EXISTS license (
 CREATE TABLE IF NOT EXISTS settings (
     id INTEGER PRIMARY KEY CHECK (id = 1),
     lock_timeout_minutes INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS generated_passwords (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    password TEXT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 ";
 
@@ -156,6 +163,20 @@ impl Database {
             self.conn.execute_batch(
                 "ALTER TABLE license ADD COLUMN activation_usage INTEGER;
                  ALTER TABLE license ADD COLUMN activation_limit INTEGER;",
+            )?;
+        }
+
+        let has_generated_passwords_table: bool = self
+            .conn
+            .prepare("SELECT id FROM generated_passwords LIMIT 0")
+            .is_ok();
+        if !has_generated_passwords_table {
+            self.conn.execute_batch(
+                "CREATE TABLE IF NOT EXISTS generated_passwords (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    password TEXT NOT NULL,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                );",
             )?;
         }
 

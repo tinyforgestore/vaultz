@@ -12,5 +12,7 @@ describe('events constants', () => {
     expect(EVENTS.VAULT_LOCKED).toBe('vault-locked');
     expect(EVENTS.VAULT_UNLOCKED).toBe('vault-unlocked');
     expect(EVENTS.PASSWORDS_CHANGED).toBe('passwords-changed');
+    expect(EVENTS.GENERATED_PASSWORDS_CHANGED).toBe('generated-passwords-changed');
+    expect(EVENTS.OPEN_CREATE_ENTRY_PREFILLED).toBe('open-create-entry-prefilled');
   });
 });

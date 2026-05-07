@@ -89,6 +89,29 @@ describe('useCreatePassword', () => {
     });
   });
 
+  describe('handleRecordGenerated', () => {
+    it('invokes record_generated_password with the password', async () => {
+      const { invoke } = await import('@tauri-apps/api/core');
+      const mockInvoke = vi.mocked(invoke);
+      mockInvoke.mockClear();
+      mockInvoke.mockResolvedValue(undefined);
+      const { result } = renderHookWithProviders(() => useCreatePassword(makeProps()));
+      act(() => result.current.handleRecordGenerated('hunter2'));
+      expect(mockInvoke).toHaveBeenCalledWith('record_generated_password', {
+        password: 'hunter2',
+      });
+    });
+
+    it('is a no-op for empty password', async () => {
+      const { invoke } = await import('@tauri-apps/api/core');
+      const mockInvoke = vi.mocked(invoke);
+      mockInvoke.mockClear();
+      const { result } = renderHookWithProviders(() => useCreatePassword(makeProps()));
+      act(() => result.current.handleRecordGenerated(''));
+      expect(mockInvoke).not.toHaveBeenCalledWith('record_generated_password', expect.anything());
+    });
+  });
+
   describe('handleSubmit', () => {
     it('calls onConfirm with form data on submit', () => {
       const onConfirm = vi.fn();

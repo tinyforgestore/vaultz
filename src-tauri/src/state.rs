@@ -21,6 +21,10 @@ pub struct SessionState {
     pub last_activity: Option<SystemTime>,
     /// Seconds before the session locks. 0 means never lock.
     pub lock_timeout_secs: u64,
+    /// When set, login() will reveal this overlay window after auth succeeds.
+    /// Set by the global-shortcut handler when the user triggers an overlay
+    /// while the vault is locked. Holds a window label (OVERLAY_SEARCH / OVERLAY_GENERATOR).
+    pub pending_overlay_intent: Option<String>,
 }
 
 impl Default for SessionState {
@@ -30,6 +34,7 @@ impl Default for SessionState {
             field_key: None,
             last_activity: None,
             lock_timeout_secs: DEFAULT_LOCK_TIMEOUT_SECS,
+            pending_overlay_intent: None,
         }
     }
 }
@@ -40,6 +45,9 @@ impl SessionState {
         self.field_key = None;
         self.last_activity = None;
         self.lock_timeout_secs = DEFAULT_LOCK_TIMEOUT_SECS;
+        // Intentionally NOT clearing pending_overlay_intent here — clear() runs
+        // on logout/lock and would race with a freshly-set intent on the
+        // shortcut path. The intent is consumed by login().
     }
 }
 
@@ -82,6 +90,7 @@ mod tests {
             field_key: Some([1u8; 32]),
             last_activity: Some(SystemTime::now()),
             lock_timeout_secs: 900,
+            pending_overlay_intent: None,
         };
         s.clear();
         assert!(!s.is_authenticated);

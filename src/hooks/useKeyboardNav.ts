@@ -30,6 +30,7 @@ interface UseKeyboardNavOptions {
     onNewPassword: () => void;
     onNewFolder: () => void;
     onToggleItemSelection: (index: number) => void;
+    onOpenHistory: () => void;
   };
 }
 
@@ -49,7 +50,7 @@ export function useKeyboardNav(options: UseKeyboardNavOptions) {
     itemActions,
   } = options;
 
-  const { onEnter, onCopy, onFavorite, onDelete, onNewPassword, onNewFolder, onToggleItemSelection } = itemActions;
+  const { onEnter, onCopy, onFavorite, onDelete, onNewPassword, onNewFolder, onToggleItemSelection, onOpenHistory } = itemActions;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -167,6 +168,13 @@ export function useKeyboardNav(options: UseKeyboardNavOptions) {
         return;
       }
 
+      // H — open generated passwords history
+      if (e.key === 'h' && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        onOpenHistory();
+        return;
+      }
+
       // Space — toggle item selection (only when in selection mode and item is highlighted)
       if (e.key === ' ') {
         if (isSelectionMode && selectedIndex >= 0) {
@@ -209,6 +217,7 @@ export function useKeyboardNav(options: UseKeyboardNavOptions) {
     onFocusSearch,
     onClearSearch,
     onToggleSelectionMode,
+    onOpenHistory,
     searchInputRef,
   ]);
 }

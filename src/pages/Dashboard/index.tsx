@@ -1,4 +1,4 @@
-import { Search, Settings, Plus, LogOut, CheckSquare, Trash2, Heart, HeartOff, Copy, Crown } from 'lucide-react';
+import { Search, Settings, Plus, LogOut, CheckSquare, Trash2, Heart, HeartOff, Copy, Crown, History } from 'lucide-react';
 import clsx from 'clsx';
 import { useEffect, type RefObject } from 'react';
 import vaultzLogo from '@/assets/vault-logo.png';
@@ -21,6 +21,7 @@ export default function Dashboard() {
     selectedFolder,
     searchQuery,
     isCreatePasswordOpen,
+    prefilledPassword,
     isCreateFolderOpen,
     isSelectionMode,
     isBulkDeleteOpen,
@@ -45,6 +46,7 @@ export default function Dashboard() {
     setPasswordToDelete,
     handlePasswordClick,
     handleSettingsClick,
+    handleNavigateGeneratedPasswords,
     handleLogout,
     toggleFavorite,
     handleCopyPassword,
@@ -82,8 +84,17 @@ export default function Dashboard() {
                 <span className={styles.brandName}>Vault</span>
               </Flex>
               <Flex gap="1">
-                <IconButton size="1" variant={isSelectionMode ? 'solid' : 'ghost'} onClick={toggleSelectionMode} aria-label="Toggle selection mode">
+                <IconButton
+                  size="1"
+                  variant="ghost"
+                  className={isSelectionMode ? styles.selectionToggleActive : undefined}
+                  onClick={toggleSelectionMode}
+                  aria-label="Toggle selection mode"
+                >
                   <CheckSquare size={14} />
+                </IconButton>
+                <IconButton size="1" variant="ghost" onClick={handleNavigateGeneratedPasswords} aria-label="Generated passwords">
+                  <History size={14} />
                 </IconButton>
                 <IconButton size="1" variant="ghost" onClick={handleSettingsClick} aria-label="Settings">
                   <Settings size={14} />
@@ -211,6 +222,7 @@ export default function Dashboard() {
         <CreatePasswordModal
           onConfirm={confirmCreatePassword}
           onCancel={() => setIsCreatePasswordOpen(false)}
+          initialPassword={prefilledPassword}
         />
       )}
 

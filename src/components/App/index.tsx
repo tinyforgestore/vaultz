@@ -3,8 +3,10 @@ import LoginPage from '@/pages/LoginPage';
 import Dashboard from '@/pages/Dashboard';
 import PasswordDetailsPage from '@/pages/PasswordDetailsPage';
 import SettingsPage from '@/pages/SettingsPage';
+import GeneratedPasswordsPage from '@/pages/GeneratedPasswordsPage';
 import { useSessionActivity } from '@/hooks/useSessionActivity';
 import { useGlobalKeyboard } from '@/hooks/useGlobalKeyboard';
+import { useOpenCreateEntryPrefilled } from '@/hooks/useOpenCreateEntryPrefilled';
 import GlobalModals from '@/components/GlobalModals';
 
 function SessionWrapper() {
@@ -12,6 +14,8 @@ function SessionWrapper() {
   useSessionActivity();
   // Global keyboard shortcuts available on all authenticated pages
   useGlobalKeyboard();
+  // Listen for overlay → main window deep-link to pre-fill the create-entry modal
+  useOpenCreateEntryPrefilled();
 
   return (
     <>
@@ -21,6 +25,7 @@ function SessionWrapper() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/password/:id" element={<PasswordDetailsPage />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/generated-passwords" element={<GeneratedPasswordsPage />} />
       </Routes>
       <GlobalModals />
     </>

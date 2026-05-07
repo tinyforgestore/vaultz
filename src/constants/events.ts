@@ -10,4 +10,6 @@ export const EVENTS = {
   VAULT_LOCKED: 'vault-locked',
   VAULT_UNLOCKED: 'vault-unlocked',
   PASSWORDS_CHANGED: 'passwords-changed',
+  GENERATED_PASSWORDS_CHANGED: 'generated-passwords-changed',
+  OPEN_CREATE_ENTRY_PREFILLED: 'open-create-entry-prefilled',
 } as const;

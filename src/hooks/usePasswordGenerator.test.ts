@@ -90,6 +90,54 @@ describe('usePasswordGenerator', () => {
     expect(onUsePassword).toHaveBeenCalledWith(result.current.generatedPassword);
   });
 
+  it('handleUsePassword calls onRecordGenerated with the current password', () => {
+    const onRecordGenerated = vi.fn();
+    const { result } = renderHook(() =>
+      usePasswordGenerator({ onUsePassword: vi.fn(), onRecordGenerated }),
+    );
+    const pw = result.current.generatedPassword;
+    act(() => result.current.handleUsePassword());
+    expect(onRecordGenerated).toHaveBeenCalledWith(pw);
+  });
+
+  it('does NOT call onRecordGenerated when only regenerating', () => {
+    const onRecordGenerated = vi.fn();
+    const { result } = renderHook(() =>
+      usePasswordGenerator({ onUsePassword: vi.fn(), onRecordGenerated }),
+    );
+    act(() => result.current.handleRegenerate());
+    expect(onRecordGenerated).not.toHaveBeenCalled();
+  });
+
+  it('does NOT call onRecordGenerated on slider tick', () => {
+    const onRecordGenerated = vi.fn();
+    const { result } = renderHook(() =>
+      usePasswordGenerator({ onUsePassword: vi.fn(), onRecordGenerated }),
+    );
+    act(() => result.current.setLength([20]));
+    expect(onRecordGenerated).not.toHaveBeenCalled();
+  });
+
+  it('does NOT call onRecordGenerated on checkbox toggle', () => {
+    const onRecordGenerated = vi.fn();
+    const { result } = renderHook(() =>
+      usePasswordGenerator({ onUsePassword: vi.fn(), onRecordGenerated }),
+    );
+    act(() => result.current.setIncludeNumbers(false));
+    expect(onRecordGenerated).not.toHaveBeenCalled();
+  });
+
+  it('onGeneratedChange fires when password is regenerated', () => {
+    const onGeneratedChange = vi.fn();
+    const { result } = renderHook(() =>
+      usePasswordGenerator({ onUsePassword: vi.fn(), onGeneratedChange }),
+    );
+    expect(onGeneratedChange).toHaveBeenCalled();
+    onGeneratedChange.mockClear();
+    act(() => result.current.handleRegenerate());
+    expect(onGeneratedChange).toHaveBeenCalled();
+  });
+
   it('regenerates when length changes', () => {
     const { result } = setup();
     act(() => result.current.setLength([8]));

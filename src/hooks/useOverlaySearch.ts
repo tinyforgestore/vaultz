@@ -1,9 +1,10 @@
 import { useEffect, useState, useRef, useCallback, type RefObject } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+import { type UnlistenFn } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { EVENTS } from '@/constants/events';
 import { HIDE_AFTER_COPY_MS } from '@/constants/overlay';
+import { useTauriEvent } from './useTauriEvent';
 import { useVaultLockState } from './useVaultLockState';
 
 export interface OverlayPasswordEntry {
@@ -93,19 +94,12 @@ export function useOverlaySearch(): UseOverlaySearchReturn {
     return () => clearTimeout(debounceRef.current);
   }, [query, isLocked, fetchResults]);
 
-  // Tauri event listeners — register exactly once on mount (C1).
-  useEffect(() => {
-    const unlistens: UnlistenFn[] = [];
-    listen(EVENTS.PASSWORDS_CHANGED, () => {
-      fetchResults(queryRef.current);
-    })
-      .then((u) => unlistens.push(u))
-      .catch(() => {});
-    return () => {
-      unlistens.forEach((u) => u());
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Refetch whenever the backend signals passwords changed. The shared
+  // useTauriEvent hook registers once and reads the latest handler via ref,
+  // so changes to fetchResults don't re-register.
+  useTauriEvent(EVENTS.PASSWORDS_CHANGED, () => {
+    fetchResults(queryRef.current);
+  });
 
   // C6: refocus input + clear query each time the overlay window is shown.
   // Pre-warmed windows reuse the same React tree, so the mount-only focus

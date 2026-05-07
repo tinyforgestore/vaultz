@@ -1,12 +1,13 @@
 use std::sync::Mutex;
 use std::time::SystemTime;
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, Emitter, Manager, State};
 
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 use password_hash::rand_core::{OsRng, RngCore};
 
 use crate::constants::{VAULT_LOCKED, VAULT_UNLOCKED};
 use crate::crypto::{derive_field_key, encrypt_field, verify_password_hash, ENC_PREFIX};
+use crate::session_artifacts::clear_session_artifacts;
 use crate::state::{db_minutes_to_secs, with_db, DbState, SessionState};
 
 fn load_or_create_salt(db_state: &State<DbState>, password: &[u8]) -> Result<[u8; 32], String> {
@@ -84,13 +85,25 @@ pub fn login(
             Err(_) => crate::state::DEFAULT_LOCK_TIMEOUT_SECS, // DB error → safe default
         };
 
-        let mut session = state.lock().unwrap();
-        session.is_authenticated = true;
-        session.field_key = Some(field_key);
-        session.last_activity = Some(SystemTime::now());
-        session.lock_timeout_secs = lock_timeout_secs;
-        drop(session);
+        let pending_intent;
+        {
+            let mut session = state.lock().unwrap();
+            session.is_authenticated = true;
+            session.field_key = Some(field_key);
+            session.last_activity = Some(SystemTime::now());
+            session.lock_timeout_secs = lock_timeout_secs;
+            pending_intent = session.pending_overlay_intent.take();
+        }
         let _ = app.emit(VAULT_UNLOCKED, ());
+
+        // If the user opened the app via a global hotkey while locked, reveal
+        // the requested overlay window now that auth has succeeded.
+        if let Some(label) = pending_intent {
+            if let Some(win) = app.get_webview_window(&label) {
+                let _ = win.show();
+                let _ = win.set_focus();
+            }
+        }
     }
 
     Ok(is_valid)
@@ -99,6 +112,7 @@ pub fn login(
 #[tauri::command]
 pub fn logout(app: AppHandle, state: State<Mutex<SessionState>>) {
     state.lock().unwrap().clear();
+    clear_session_artifacts(&app);
     let _ = app.emit(VAULT_LOCKED, ());
 }
 
@@ -116,7 +130,7 @@ pub fn update_activity(state: State<Mutex<SessionState>>) {
 }
 
 #[tauri::command]
-pub fn check_session_timeout(state: State<Mutex<SessionState>>) -> bool {
+pub fn check_session_timeout(app: AppHandle, state: State<Mutex<SessionState>>) -> bool {
     let mut session = state.lock().unwrap();
     // lock_timeout_secs == 0 means "never lock"
     if session.lock_timeout_secs == 0 {
@@ -127,6 +141,8 @@ pub fn check_session_timeout(state: State<Mutex<SessionState>>) -> bool {
         if let Ok(elapsed) = SystemTime::now().duration_since(last_activity) {
             if elapsed > timeout {
                 session.clear();
+                drop(session);
+                clear_session_artifacts(&app);
                 return true;
             }
         }
@@ -171,6 +187,7 @@ mod tests {
             field_key: Some([1u8; 32]),
             last_activity: Some(SystemTime::now() - lock_timeout - Duration::from_secs(1)),
             lock_timeout_secs: DEFAULT_LOCK_TIMEOUT_SECS,
+            pending_overlay_intent: None,
         };
         assert!(is_timed_out(&mut session));
         assert!(!session.is_authenticated);
@@ -184,6 +201,7 @@ mod tests {
             field_key: Some([1u8; 32]),
             last_activity: Some(SystemTime::now()),
             lock_timeout_secs: DEFAULT_LOCK_TIMEOUT_SECS,
+            pending_overlay_intent: None,
         };
         assert!(!is_timed_out(&mut session));
         assert!(session.is_authenticated);
@@ -203,6 +221,7 @@ mod tests {
             // Activity set to far in the past — should still not time out
             last_activity: Some(SystemTime::now() - Duration::from_secs(99999)),
             lock_timeout_secs: 0,
+            pending_overlay_intent: None,
         };
         assert!(!is_timed_out(&mut session));
         assert!(session.is_authenticated);

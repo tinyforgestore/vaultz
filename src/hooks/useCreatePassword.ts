@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Password, CreateFolderInput, PasswordFormData } from '@/types';
 import { normalizeUrl } from '@/utils/url';
+import { recordGeneratedPassword } from '@/utils/recordGeneratedPassword';
 import { useCreateFolder } from './useCreateFolder';
 
 interface UseCreatePasswordProps {
@@ -20,6 +21,9 @@ export function useCreatePassword({ onConfirm, initialPassword = '', initialData
 
   const { confirmCreateFolder: createFolderAction } = useCreateFolder();
 
+  // Guard against stomping on a user-edited password when the modal re-renders
+  // with a stale `initialPassword`: we only sync state when the prop itself
+  // actually changes (e.g. a new prefilled password arrives).
   const prevInitialPassword = useRef(initialPassword);
   useEffect(() => {
     if (initialPassword && initialPassword !== prevInitialPassword.current) {
@@ -32,6 +36,14 @@ export function useCreatePassword({ onConfirm, initialPassword = '', initialData
     setPassword(generatedPassword);
     setShowGenerator(false);
   };
+
+  /**
+   * Records the generated password to history. Failures are swallowed so that
+   * the create flow keeps working even if the history table is unavailable.
+   */
+  const handleRecordGenerated = useCallback((generatedPassword: string) => {
+    recordGeneratedPassword(generatedPassword);
+  }, []);
 
   const confirmCreateFolder = (folderData: CreateFolderInput) => {
     return createFolderAction(folderData).then((newFolder) => {
@@ -68,6 +80,7 @@ export function useCreatePassword({ onConfirm, initialPassword = '', initialData
     setFolder,
     setShowGenerator,
     handleUseGeneratedPassword,
+    handleRecordGenerated,
     confirmCreateFolder,
     handleSubmit,
   };

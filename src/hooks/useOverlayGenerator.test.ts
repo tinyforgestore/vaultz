@@ -42,6 +42,30 @@ describe('useOverlayGenerator', () => {
     expect(mockInvoke).toHaveBeenCalledWith('hide_overlay_generator');
   });
 
+  it('copyToClipboard does NOT call record_generated_password (single source is PasswordGenerator.onRecordGenerated)', async () => {
+    mockInvoke.mockResolvedValue(undefined);
+    const { result } = renderHook(() => useOverlayGenerator());
+    await act(async () => {
+      result.current.copyToClipboard('mypass');
+      await new Promise((r) => setTimeout(r, 250));
+    });
+    expect(mockInvoke).not.toHaveBeenCalledWith('record_generated_password', expect.anything());
+  });
+
+  it('recordGenerated invokes record_generated_password with the password', () => {
+    mockInvoke.mockResolvedValue(undefined);
+    const { result } = renderHook(() => useOverlayGenerator());
+    act(() => result.current.recordGenerated('hunter2'));
+    expect(mockInvoke).toHaveBeenCalledWith('record_generated_password', { password: 'hunter2' });
+  });
+
+  it('recordGenerated is a no-op for empty input', () => {
+    mockInvoke.mockResolvedValue(undefined);
+    const { result } = renderHook(() => useOverlayGenerator());
+    act(() => result.current.recordGenerated(''));
+    expect(mockInvoke).not.toHaveBeenCalledWith('record_generated_password', expect.anything());
+  });
+
   it('hideOverlay invokes hide command', () => {
     mockInvoke.mockResolvedValue(undefined);
     const { result } = renderHook(() => useOverlayGenerator());
@@ -58,9 +82,23 @@ describe('useOverlayGenerator', () => {
     expect(mockInvoke).toHaveBeenCalledWith('hide_overlay_generator');
   });
 
-  it('saveAsEntry is a no-op stub for PM-024', () => {
+  it('saveAsEntry is a no-op when no generated password has been seen', () => {
     mockInvoke.mockResolvedValue(undefined);
     const { result } = renderHook(() => useOverlayGenerator());
-    expect(() => act(() => result.current.saveAsEntry())).not.toThrow();
+    act(() => result.current.saveAsEntry());
+    expect(mockInvoke).not.toHaveBeenCalledWith(
+      'open_create_entry_prefilled',
+      expect.anything(),
+    );
+  });
+
+  it('saveAsEntry forwards the latest generated password to open_create_entry_prefilled', () => {
+    mockInvoke.mockResolvedValue(undefined);
+    const { result } = renderHook(() => useOverlayGenerator());
+    act(() => result.current.handleGeneratedChange('Tr0ub4dor&3'));
+    act(() => result.current.saveAsEntry());
+    expect(mockInvoke).toHaveBeenCalledWith('open_create_entry_prefilled', {
+      password: 'Tr0ub4dor&3',
+    });
   });
 });

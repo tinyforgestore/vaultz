@@ -6,6 +6,7 @@ use tauri::{AppHandle, State};
 
 use crate::crypto::derive_field_key;
 use crate::database::{Database, DB_FILENAME};
+use crate::session_artifacts::clear_session_artifacts;
 use crate::state::{get_app_data_dir, with_db, DbState, SessionState};
 
 const MAGIC: &[u8] = b"PMVAULT1";
@@ -71,6 +72,7 @@ pub fn destroy_vault(
 ) -> Result<(), String> {
     eprintln!("[destroy_vault] clearing session and closing database");
     session_state.lock().unwrap().clear();
+    clear_session_artifacts(&app_handle);
     *db_state.lock().unwrap() = None;
 
     let app_data_dir = get_app_data_dir(&app_handle)?;
@@ -138,6 +140,8 @@ pub fn import_vault(
 
     *db_state.lock().unwrap() = Some(new_db);
     session_state.lock().unwrap().clear();
+    // Imports begin a fresh session — clearing the imported vault's prior history is intentional.
+    clear_session_artifacts(&app_handle);
 
     eprintln!("[import_vault] done");
     Ok(())

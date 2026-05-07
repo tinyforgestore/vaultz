@@ -1,5 +1,6 @@
 pub mod clipboard;
 pub mod folders;
+pub mod generated_passwords;
 pub mod license;
 pub mod overlay;
 pub mod passwords;

@@ -1,7 +1,10 @@
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, State};
 
-use crate::constants::{OVERLAY_GENERATOR, OVERLAY_SEARCH, VAULT_LOCKED};
+use crate::constants::{
+    MAIN, OPEN_CREATE_ENTRY_PREFILLED, OVERLAY_GENERATOR, OVERLAY_SEARCH, VAULT_LOCKED,
+};
+use crate::session_artifacts::clear_session_artifacts;
 use crate::state::SessionState;
 use crate::window_helpers::{hide_window, show_window};
 
@@ -50,6 +53,7 @@ pub fn lock_vault(
     session_state: State<Mutex<SessionState>>,
 ) -> Result<(), String> {
     session_state.lock().unwrap().clear();
+    clear_session_artifacts(&app);
     app.emit(VAULT_LOCKED, ()).map_err(|e| e.to_string())?;
     // Hide overlays since they should not be usable when locked.
     if let Err(e) = hide_window(&app, OVERLAY_SEARCH) {
@@ -59,6 +63,28 @@ pub fn lock_vault(
         eprintln!("lock_vault: failed to hide overlay-generator: {e}");
     }
     Ok(())
+}
+
+/// Hides the generator overlay, surfaces the main window, and emits an event
+/// that tells the main window to navigate to the dashboard's create-entry modal
+/// pre-filled with the supplied password.
+#[tauri::command]
+pub fn open_create_entry_prefilled(
+    app: AppHandle,
+    password: String,
+    session_state: State<Mutex<SessionState>>,
+) -> Result<(), String> {
+    if !is_authed(&session_state) {
+        return Ok(());
+    }
+    if let Err(e) = hide_window(&app, OVERLAY_GENERATOR) {
+        eprintln!("open_create_entry_prefilled: hide overlay: {e}");
+    }
+    if let Err(e) = show_window(&app, MAIN) {
+        eprintln!("open_create_entry_prefilled: show main: {e}");
+    }
+    app.emit_to(MAIN, OPEN_CREATE_ENTRY_PREFILLED, password)
+        .map_err(|e| e.to_string())
 }
 
 #[cfg(test)]
@@ -79,6 +105,7 @@ mod tests {
             field_key: Some([2u8; 32]),
             last_activity: Some(SystemTime::now()),
             lock_timeout_secs: 600,
+            pending_overlay_intent: None,
         };
         lock_session(&mut s);
         assert!(!s.is_authenticated);
@@ -107,6 +134,7 @@ mod tests {
             field_key: Some([1u8; 32]),
             last_activity: Some(SystemTime::now()),
             lock_timeout_secs: 600,
+            pending_overlay_intent: None,
         };
         assert!(s.is_authenticated);
     }

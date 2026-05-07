@@ -6,7 +6,14 @@ import { useOverlayGenerator } from '@/hooks/useOverlayGenerator';
 import * as styles from './index.css';
 
 export default function OverlayGenerator() {
-  const { isLocked, hideOverlay, copyToClipboard, saveAsEntry } = useOverlayGenerator();
+  const {
+    isLocked,
+    hideOverlay,
+    copyToClipboard,
+    recordGenerated,
+    handleGeneratedChange,
+    saveAsEntry,
+  } = useOverlayGenerator();
 
   if (isLocked) {
     return <VaultLockedPanel />;
@@ -17,13 +24,11 @@ export default function OverlayGenerator() {
       <div className={styles.headerRow}>
         <strong>Generate Password</strong>
         <Flex gap="2">
-          {/* PM-024: button is a stub — disabled until generation-first entry creation lands. */}
           <Button
             size="1"
             variant="soft"
-            disabled
             onClick={saveAsEntry}
-            title="Save as new entry — coming soon"
+            title="Save as new entry"
           >
             <Plus size={14} /> New entry
           </Button>
@@ -33,6 +38,8 @@ export default function OverlayGenerator() {
         isEmbedded
         onUsePassword={(pw) => copyToClipboard(pw)}
         onCancel={hideOverlay}
+        onRecordGenerated={recordGenerated}
+        onGeneratedChange={handleGeneratedChange}
       />
       <div className={styles.hintRow}>
         <span>Enter: copy & close</span>

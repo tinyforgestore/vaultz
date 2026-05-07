@@ -51,6 +51,11 @@ export const brandName = style({
   letterSpacing: '-0.01em',
 });
 
+export const selectionToggleActive = style({
+  background: 'var(--iris-9) !important',
+  color: 'white !important',
+});
+
 export const tabStrip = style({
   display: 'flex',
   flexDirection: 'row',

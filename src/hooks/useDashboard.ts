@@ -1,5 +1,9 @@
+// TODO: This hook owns too many concerns (selection, modals, navigation,
+// folder/password CRUD wiring). Future work: decompose into smaller, scoped
+// hooks (e.g. useDashboardSelection, useDashboardModals). Out of scope for
+// PM-024 — flagged here per code-review M2.
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useSetAtom } from 'jotai';
 import { invoke } from '@tauri-apps/api/core';
 import {
@@ -29,6 +33,7 @@ const FAVORITES_ID = SPECIAL_FOLDERS.FAVORITES.toString();
 
 export function useDashboard() {
   const [isCreatePasswordOpen, setIsCreatePasswordOpen] = useState(false);
+  const [prefilledPassword, setPrefilledPassword] = useState('');
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [passwordToDelete, setPasswordToDelete] = useState<Password | null>(null);
@@ -51,6 +56,7 @@ export function useDashboard() {
   const setFavoriteAlert = useSetAtom(favoriteAlertAtom);
   const loadData = useSetAtom(loadInitialDataAtom);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const { confirmCreateFolder: createFolderAction } = useCreateFolder();
   const { checkAndOpen } = useLimitCheck();
@@ -59,6 +65,22 @@ export function useDashboard() {
   const selection = usePasswordSelection(passwords);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  // Handle inbound prefill from overlay → main window deep-link.
+  // We consume the navigation state once and clear it so a refresh / re-render
+  // does not re-trigger the modal.
+  useEffect(() => {
+    const state = location.state as { prefilledPassword?: string } | null;
+    if (state?.prefilledPassword) {
+      setPrefilledPassword(state.prefilledPassword);
+      setIsCreatePasswordOpen(true);
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location, navigate]);
+
+  const handleNavigateGeneratedPasswords = useCallback(() => {
+    navigate('/generated-passwords');
+  }, [navigate]);
 
   useEffect(() => {
     setSelectedIndex(-1);
@@ -187,6 +209,7 @@ export function useDashboard() {
         const pw = passwords[index];
         if (pw) selection.toggleSelection(pw.id);
       },
+      onOpenHistory: handleNavigateGeneratedPasswords,
     },
   });
 
@@ -219,6 +242,7 @@ export function useDashboard() {
     selectedFolder,
     searchQuery,
     isCreatePasswordOpen,
+    prefilledPassword,
     isCreateFolderOpen,
     favoriteAlert,
     showFolderTag,
@@ -241,6 +265,7 @@ export function useDashboard() {
 
     handlePasswordClick,
     handleSettingsClick,
+    handleNavigateGeneratedPasswords,
     handleLogout,
     toggleFavorite,
     handleCreatePassword,

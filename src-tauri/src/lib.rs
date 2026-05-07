@@ -10,6 +10,7 @@ mod commands;
 pub mod constants;
 mod crypto;
 mod database;
+mod session_artifacts;
 mod state;
 mod window_helpers;
 
@@ -22,6 +23,15 @@ use window_helpers::{hide_window, show_window, toggle_window};
 fn is_session_authed(app: &tauri::AppHandle) -> bool {
     let state: State<Mutex<SessionState>> = app.state();
     state.lock().map(|g| g.is_authenticated).unwrap_or(false)
+}
+
+/// Records an overlay window label that should be revealed once the user logs in.
+/// Consumed by `commands::session::auth::login` after successful auth.
+fn set_pending_overlay_intent(app: &tauri::AppHandle, label: &str) {
+    let state: State<Mutex<SessionState>> = app.state();
+    if let Ok(mut g) = state.lock() {
+        g.pending_overlay_intent = Some(label.to_string());
+    };
 }
 
 fn prewarm_overlays(app: &mut App) {
@@ -64,6 +74,7 @@ fn setup_tray(app: &mut App) -> tauri::Result<()> {
             "lock" => {
                 let session_state: State<Mutex<SessionState>> = app.state();
                 session_state.lock().unwrap().clear();
+                crate::session_artifacts::clear_session_artifacts(app);
                 let _ = app.emit(VAULT_LOCKED, ());
                 let _ = hide_window(app, OVERLAY_SEARCH);
                 let _ = hide_window(app, OVERLAY_GENERATOR);
@@ -95,19 +106,43 @@ fn register_global_shortcuts(app: &mut App) -> Result<(), Box<dyn std::error::Er
         Some(Modifiers::META | Modifiers::SHIFT),
         Code::KeyG,
     );
+    let main_shortcut = tauri_plugin_global_shortcut::Shortcut::new(
+        Some(Modifiers::META | Modifiers::ALT),
+        Code::KeyV,
+    );
 
     app.global_shortcut()
         .on_shortcut(search_shortcut, move |_app, _sc, event| {
-            if event.state == ShortcutState::Pressed && is_session_authed(&handle) {
+            if event.state != ShortcutState::Pressed {
+                return;
+            }
+            if is_session_authed(&handle) {
                 let _ = toggle_window(&handle, OVERLAY_SEARCH);
+            } else {
+                set_pending_overlay_intent(&handle, OVERLAY_SEARCH);
+                let _ = show_window(&handle, MAIN);
             }
         })?;
 
     let handle2 = app.handle().clone();
     app.global_shortcut()
         .on_shortcut(gen_shortcut, move |_app, _sc, event| {
-            if event.state == ShortcutState::Pressed && is_session_authed(&handle2) {
+            if event.state != ShortcutState::Pressed {
+                return;
+            }
+            if is_session_authed(&handle2) {
                 let _ = toggle_window(&handle2, OVERLAY_GENERATOR);
+            } else {
+                set_pending_overlay_intent(&handle2, OVERLAY_GENERATOR);
+                let _ = show_window(&handle2, MAIN);
+            }
+        })?;
+
+    let handle3 = app.handle().clone();
+    app.global_shortcut()
+        .on_shortcut(main_shortcut, move |_app, _sc, event| {
+            if event.state == ShortcutState::Pressed {
+                let _ = show_window(&handle3, MAIN);
             }
         })?;
     Ok(())
@@ -202,6 +237,11 @@ pub fn run() {
             commands::overlay::show_overlay_generator,
             commands::overlay::hide_overlay_generator,
             commands::overlay::lock_vault,
+            commands::overlay::open_create_entry_prefilled,
+            commands::generated_passwords::record_generated_password,
+            commands::generated_passwords::list_generated_passwords,
+            commands::generated_passwords::delete_generated_password,
+            commands::generated_passwords::clear_generated_passwords,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
