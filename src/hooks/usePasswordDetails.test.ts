@@ -49,7 +49,7 @@ describe('usePasswordDetails', () => {
     it('auto-clears toastMessage after 2 seconds', async () => {
       vi.useFakeTimers();
       const { result } = setup();
-      await act(async () => result.current.copyField('username', 'user'));
+      await act(async () => result.current.copyToClipboard('username', 'user'));
       expect(result.current.toastMessage).not.toBe('');
       act(() => vi.advanceTimersByTime(2000));
       expect(result.current.toastMessage).toBe('');
@@ -57,11 +57,11 @@ describe('usePasswordDetails', () => {
     });
   });
 
-  describe('copyField', () => {
+  describe('copyToClipboard', () => {
     it('sets copiedField and clears after 1.5s', async () => {
       vi.useFakeTimers();
       const { result } = setup();
-      await act(async () => result.current.copyField('username', 'user'));
+      await act(async () => result.current.copyToClipboard('username', 'user'));
       expect(result.current.copiedField).toBe('username');
       act(() => vi.advanceTimersByTime(1500));
       expect(result.current.copiedField).toBeNull();
@@ -70,7 +70,7 @@ describe('usePasswordDetails', () => {
 
     it('does nothing when value is empty', () => {
       const { result } = setup();
-      act(() => result.current.copyField('username', ''));
+      act(() => result.current.copyToClipboard('username', ''));
       expect(result.current.copiedField).toBeNull();
     });
   });

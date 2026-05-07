@@ -46,6 +46,25 @@ pub fn hide_overlay_generator(app: AppHandle) -> Result<(), String> {
     hide_window(&app, OVERLAY_GENERATOR).map_err(|e| e.to_string())
 }
 
+/// Dismisses the app entirely after a copy action. On macOS this calls
+/// `app.hide()`, which hides every window and yields keyboard focus back to
+/// the previously-active app — so the user's Cmd+V lands in their browser
+/// (or wherever they came from), not in Vaultz's main window.
+/// On other platforms we fall back to hiding only the overlay windows.
+#[tauri::command]
+pub fn hide_app_after_copy(app: AppHandle) -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    {
+        app.hide().map_err(|e| e.to_string())?;
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = hide_window(&app, OVERLAY_SEARCH);
+        let _ = hide_window(&app, OVERLAY_GENERATOR);
+    }
+    Ok(())
+}
+
 /// Locks the vault: clears the session state and emits `vault-locked` to all windows.
 #[tauri::command]
 pub fn lock_vault(

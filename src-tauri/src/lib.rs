@@ -236,6 +236,7 @@ pub fn run() {
             commands::overlay::hide_overlay_search,
             commands::overlay::show_overlay_generator,
             commands::overlay::hide_overlay_generator,
+            commands::overlay::hide_app_after_copy,
             commands::overlay::lock_vault,
             commands::overlay::open_create_entry_prefilled,
             commands::generated_passwords::record_generated_password,

@@ -223,9 +223,9 @@ describe('PasswordDetailsPage', () => {
     });
   });
 
-  it('copying password field calls clipboard with the password', async () => {
+  it('copying password field routes through write_secret_to_clipboard (secure path with auto-clear)', async () => {
     const user = userEvent.setup();
-    const writeTextSpy = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue(undefined);
+    vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue(undefined);
     const pw = makePassword({ password: 'mysecret' });
     await renderDetailsPageReady('p1', pw);
 
@@ -233,7 +233,7 @@ describe('PasswordDetailsPage', () => {
     await user.click(copyPasswordBtn);
 
     await waitFor(() => {
-      expect(writeTextSpy).toHaveBeenCalledWith('mysecret');
+      expect(mockInvoke).toHaveBeenCalledWith('write_secret_to_clipboard', { text: 'mysecret' });
     });
   });
 

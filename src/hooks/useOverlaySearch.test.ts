@@ -67,7 +67,7 @@ describe('useOverlaySearch', () => {
       await new Promise((r) => setTimeout(r, 250));
     });
     expect(mockInvoke).toHaveBeenCalledWith('write_secret_to_clipboard', { text: 'sekret' });
-    expect(mockInvoke).toHaveBeenCalledWith('hide_overlay_search');
+    expect(mockInvoke).toHaveBeenCalledWith('hide_app_after_copy');
   });
 
   it('copyUsername writes username then hides overlay', async () => {
@@ -81,7 +81,7 @@ describe('useOverlaySearch', () => {
       await new Promise((r) => setTimeout(r, 250));
     });
     expect(mockInvoke).toHaveBeenCalledWith('write_secret_to_clipboard', { text: 'me@example.com' });
-    expect(mockInvoke).toHaveBeenCalledWith('hide_overlay_search');
+    expect(mockInvoke).toHaveBeenCalledWith('hide_app_after_copy');
   });
 
   it('hideOverlay invokes hide command', () => {
@@ -173,7 +173,7 @@ describe('useOverlaySearch', () => {
     expect(mockInvoke).toHaveBeenCalledWith('write_secret_to_clipboard', { text: 'me@example.com' });
   });
 
-  it('Escape calls hide_overlay_search', async () => {
+  it('Escape calls hide_app_after_copy', async () => {
     mockInvoke.mockImplementation((cmd) => {
       if (cmd === 'is_authenticated') return Promise.resolve(true);
       return Promise.resolve(undefined);
@@ -182,7 +182,7 @@ describe('useOverlaySearch', () => {
     await waitFor(() => expect(result.current.isLocked).toBe(false));
     const evt = { key: 'Escape', preventDefault: vi.fn() } as unknown as React.KeyboardEvent<HTMLInputElement>;
     act(() => result.current.handleKeyDown(evt));
-    expect(mockInvoke).toHaveBeenCalledWith('hide_overlay_search');
+    expect(mockInvoke).toHaveBeenCalledWith('hide_app_after_copy');
   });
 
   it('ArrowDown advances selectedIndex', async () => {

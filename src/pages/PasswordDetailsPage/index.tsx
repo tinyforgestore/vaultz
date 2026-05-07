@@ -27,7 +27,7 @@ export default function PasswordDetailsPage() {
     confirmDelete,
     handleToggleFavorite,
     handleBack,
-    copyField,
+    copyToClipboard,
   } = usePasswordDetails();
 
   if (!password) {
@@ -78,7 +78,7 @@ export default function PasswordDetailsPage() {
               <span>User / Email</span>
             </Flex>
             {userField && (
-              <IconButton size="1" variant="ghost" aria-label="Copy username" onClick={() => copyField('username', userField)}>
+              <IconButton size="1" variant="ghost" aria-label="Copy username" onClick={() => copyToClipboard('username', userField)}>
                 {copiedField === 'username' ? <Check size={12} /> : <Copy size={12} />}
               </IconButton>
             )}
@@ -98,7 +98,7 @@ export default function PasswordDetailsPage() {
               <IconButton size="1" variant="ghost" aria-label="Toggle password visibility" onClick={() => setShowPassword(!showPassword)}>
                 {showPassword ? <EyeOff size={12} /> : <Eye size={12} />}
               </IconButton>
-              <IconButton size="1" variant="ghost" aria-label="Copy password" onClick={() => copyField('password', password.password)}>
+              <IconButton size="1" variant="ghost" aria-label="Copy password" onClick={() => copyToClipboard('password', password.password, { secure: true })}>
                 {copiedField === 'password' ? <Check size={12} /> : <Copy size={12} />}
               </IconButton>
             </Flex>
@@ -117,7 +117,7 @@ export default function PasswordDetailsPage() {
               <span>Website</span>
             </Flex>
             {password.website && (
-              <IconButton size="1" variant="ghost" aria-label="Copy website" onClick={() => copyField('website', password.website!)}>
+              <IconButton size="1" variant="ghost" aria-label="Copy website" onClick={() => copyToClipboard('website', password.website!)}>
                 {copiedField === 'website' ? <Check size={12} /> : <Copy size={12} />}
               </IconButton>
             )}
@@ -146,7 +146,7 @@ export default function PasswordDetailsPage() {
                 <User size={13} />
                 <span>Recovery Email</span>
               </Flex>
-              <IconButton size="1" variant="ghost" aria-label="Copy recovery email" onClick={() => copyField('recovery', password.recoveryEmail!)}>
+              <IconButton size="1" variant="ghost" aria-label="Copy recovery email" onClick={() => copyToClipboard('recovery', password.recoveryEmail!)}>
                 {copiedField === 'recovery' ? <Check size={12} /> : <Copy size={12} />}
               </IconButton>
             </Flex>

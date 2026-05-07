@@ -39,7 +39,7 @@ describe('useOverlayGenerator', () => {
       await new Promise((r) => setTimeout(r, 250));
     });
     expect(mockInvoke).toHaveBeenCalledWith('write_secret_to_clipboard', { text: 'mypass' });
-    expect(mockInvoke).toHaveBeenCalledWith('hide_overlay_generator');
+    expect(mockInvoke).toHaveBeenCalledWith('hide_app_after_copy');
   });
 
   it('copyToClipboard does NOT call record_generated_password (single source is PasswordGenerator.onRecordGenerated)', async () => {
@@ -73,13 +73,13 @@ describe('useOverlayGenerator', () => {
     expect(mockInvoke).toHaveBeenCalledWith('hide_overlay_generator');
   });
 
-  it('window keydown Escape calls hide_overlay_generator', () => {
+  it('window keydown Escape dismisses the app', () => {
     mockInvoke.mockResolvedValue(undefined);
     renderHook(() => useOverlayGenerator());
     act(() => {
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     });
-    expect(mockInvoke).toHaveBeenCalledWith('hide_overlay_generator');
+    expect(mockInvoke).toHaveBeenCalledWith('hide_app_after_copy');
   });
 
   it('saveAsEntry is a no-op when no generated password has been seen', () => {

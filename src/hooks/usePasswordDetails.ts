@@ -1,9 +1,12 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { invoke } from '@tauri-apps/api/core';
 import { allPasswordsAtom, updatePasswordAtom, deletePasswordAtom, toggleFavoriteAtom, favoriteAlertAtom, foldersAtom } from '@/store/atoms';
 import { PasswordFormData } from '@/types';
 import { normalizeUrl } from '@/utils/url';
+import { CLIPBOARD_CLEAR_DELAY_MS, CLIPBOARD_CLEAR_DELAY_S } from '@/constants/clipboard';
+import { usePasswordDetailsKeys } from './usePasswordDetailsKeys';
 
 export function usePasswordDetails() {
   const { id: passwordId } = useParams();
@@ -17,6 +20,7 @@ export function usePasswordDetails() {
 
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const copyFieldTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clipboardClearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const folders = useAtomValue(foldersAtom);
   const allPasswords = useAtomValue(allPasswordsAtom);
@@ -34,6 +38,7 @@ export function usePasswordDetails() {
   useEffect(() => () => {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     if (copyFieldTimerRef.current) clearTimeout(copyFieldTimerRef.current);
+    if (clipboardClearTimerRef.current) clearTimeout(clipboardClearTimerRef.current);
   }, []);
 
   const folder = useMemo(
@@ -55,18 +60,42 @@ export function usePasswordDetails() {
     showTimedToast(message, 'error');
   };
 
-  const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text)
-      .then(() => showTimedToast('Copied — clipboard clears in 45s', 'success'))
-      .catch(onError('Failed to copy'));
-  };
-
-  const copyField = (field: string, value: string) => {
-    if (!value) return;
-    handleCopy(value);
+  const flashCopiedField = (field: string) => {
     if (copyFieldTimerRef.current) clearTimeout(copyFieldTimerRef.current);
     setCopiedField(field);
     copyFieldTimerRef.current = setTimeout(() => setCopiedField(null), 1500);
+  };
+
+  // `secure: true` routes through Rust (ConcealedType on macOS) and schedules
+  // a clipboard wipe after CLIPBOARD_CLEAR_DELAY_MS. Plain copies are direct
+  // navigator.clipboard writes with no auto-clear.
+  const copyToClipboard = (
+    field: string,
+    value: string,
+    options: { secure?: boolean } = {},
+  ) => {
+    if (!value) return;
+    const write = options.secure
+      ? invoke('write_secret_to_clipboard', { text: value })
+      : navigator.clipboard.writeText(value);
+
+    write
+      .then(() =>
+        showTimedToast(
+          options.secure ? `Copied — clipboard clears in ${CLIPBOARD_CLEAR_DELAY_S}s` : 'Copied',
+          'success',
+        ),
+      )
+      .catch(onError('Failed to copy'));
+
+    flashCopiedField(field);
+
+    if (options.secure) {
+      if (clipboardClearTimerRef.current) clearTimeout(clipboardClearTimerRef.current);
+      clipboardClearTimerRef.current = setTimeout(() => {
+        navigator.clipboard.writeText('').catch(() => {});
+      }, CLIPBOARD_CLEAR_DELAY_MS);
+    }
   };
 
   const handleEdit = () => setIsEditModalOpen(true);
@@ -112,6 +141,25 @@ export function usePasswordDetails() {
 
   const handleBack = () => navigate('/dashboard');
 
+  // PM-022: keyboard shortcuts on the detail page (Esc/Backspace, 1/2/3, E, F).
+  // Suppressed while a modal is open so its own keyboard handling can win.
+  // Mirrors the page's `userField = username || email` fallback so the
+  // shortcut still copies even when only `email` is set.
+  usePasswordDetailsKeys({
+    enabled: !isEditModalOpen && !isDeleteModalOpen,
+    password: password
+      ? {
+          username: password.username || password.email || '',
+          password: password.password,
+          website: password.website,
+        }
+      : null,
+    onBack: handleBack,
+    onEdit: handleEdit,
+    onToggleFavorite: handleToggleFavorite,
+    onCopyField: (field, value) => copyToClipboard(field, value, { secure: field === 'password' }),
+  });
+
   return {
     password,
     showPassword,
@@ -133,6 +181,6 @@ export function usePasswordDetails() {
     confirmDelete,
     handleToggleFavorite,
     handleBack,
-    copyField,
+    copyToClipboard,
   };
 }

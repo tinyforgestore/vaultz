@@ -128,15 +128,22 @@ export function useOverlaySearch(): UseOverlaySearchReturn {
     invoke('hide_overlay_search').catch(() => {});
   }, []);
 
+  // After a copy, hide the entire app so focus returns to whichever app the
+  // user came from (e.g. Chrome) — otherwise Vaultz's main window steals
+  // keyboard focus and Cmd+V lands in the wrong place.
+  const dismissAfterCopy = useCallback(() => {
+    invoke('hide_app_after_copy').catch(() => {});
+  }, []);
+
   const copyPassword = useCallback(
     (entry: OverlayPasswordEntry) => {
       invoke('write_secret_to_clipboard', { text: entry.password })
         .catch(() => {})
         .finally(() => {
-          setTimeout(() => hideOverlay(), HIDE_AFTER_COPY_MS);
+          setTimeout(() => dismissAfterCopy(), HIDE_AFTER_COPY_MS);
         });
     },
-    [hideOverlay],
+    [dismissAfterCopy],
   );
 
   const copyUsername = useCallback(
@@ -144,16 +151,18 @@ export function useOverlaySearch(): UseOverlaySearchReturn {
       invoke('write_secret_to_clipboard', { text: entry.username })
         .catch(() => {})
         .finally(() => {
-          setTimeout(() => hideOverlay(), HIDE_AFTER_COPY_MS);
+          setTimeout(() => dismissAfterCopy(), HIDE_AFTER_COPY_MS);
         });
     },
-    [hideOverlay],
+    [dismissAfterCopy],
   );
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === 'Escape') {
-        hideOverlay();
+        // Dismiss the entire app so focus returns to whichever app the user
+        // came from, same as the copy path.
+        dismissAfterCopy();
         return;
       }
       if (e.key === 'ArrowDown') {
@@ -185,7 +194,7 @@ export function useOverlaySearch(): UseOverlaySearchReturn {
         copyUsername(selected);
       }
     },
-    [results, selectedIndex, hideOverlay, copyPassword, copyUsername],
+    [results, selectedIndex, dismissAfterCopy, copyPassword, copyUsername],
   );
 
   return {
