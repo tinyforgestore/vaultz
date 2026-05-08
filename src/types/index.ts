@@ -9,6 +9,10 @@ export interface Password {
   recoveryEmail?: string;
   isFavorite: boolean;
   folderId: string;
+  // `favicon` stores a Simple Icons slug (e.g. "github"), not a URL or image.
+  // Null is a meaningful state on update (user picked "None" in the picker)
+  // and is sent as JSON `null` so the Rust side clears the column.
+  favicon?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -28,6 +32,7 @@ export interface CreatePasswordInput {
   url?: string;
   notes?: string;
   folder?: string;
+  favicon?: string | null;
 }
 
 export interface PasswordFormData {
@@ -37,6 +42,7 @@ export interface PasswordFormData {
   url: string;
   notes: string;
   folder: string;
+  favicon?: string | null;
 }
 
 export interface CreateFolderInput {

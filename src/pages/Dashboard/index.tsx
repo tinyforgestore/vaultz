@@ -112,7 +112,6 @@ export default function Dashboard() {
               className={styles.searchContainer}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ '--radius-2': '999px' } as React.CSSProperties}
             >
               <TextField.Slot>
                 <Search size={15} />

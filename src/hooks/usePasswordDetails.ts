@@ -111,6 +111,10 @@ export function usePasswordDetails() {
         website: normalizeUrl(passwordData.url),
         notes: passwordData.notes,
         folderId: passwordData.folder,
+        // Always include the field — `null` is meaningful (user picked "None").
+        // The Rust side's tri-state Option<Option<String>> reads JSON `null` as
+        // "set column to NULL" and a string as "set to slug".
+        favicon: passwordData.favicon,
       },
     })
       .then(() => setIsEditModalOpen(false))

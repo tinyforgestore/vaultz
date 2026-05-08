@@ -169,6 +169,7 @@ mod tests {
             url: None,
             notes: Some(encrypt_field(key, "my note").unwrap()),
             folder: Some(folder_id.to_string()),
+            favicon: None,
         };
         let entry = db.create_password(&input).unwrap();
         super::decrypt_entry(key, entry).unwrap()
@@ -198,6 +199,7 @@ mod tests {
             url: None,
             notes: None,
             folder: Some(folder.id),
+            favicon: None,
         };
         let entry = db.create_password(&input).unwrap();
         let wrong_key = [0u8; 32];

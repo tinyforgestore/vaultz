@@ -1,4 +1,5 @@
 import { Check, AlertTriangle, Info, type LucideIcon } from 'lucide-react';
+import clsx from 'clsx';
 import { ReactNode } from 'react';
 import * as styles from './index.css';
 
@@ -11,13 +12,6 @@ const ICONS: Record<ToastVariant, LucideIcon> = {
   error: AlertTriangle,
 };
 
-const ICON_COLORS: Record<ToastVariant, string> = {
-  default: 'var(--blue-9)',
-  success: 'var(--green-9)',
-  warning: 'var(--amber-9)',
-  error: 'var(--red-9)',
-};
-
 interface ToastProps {
   message: string;
   variant?: ToastVariant;
@@ -26,11 +20,10 @@ interface ToastProps {
 
 export function Toast({ message, variant = 'default', icon }: ToastProps) {
   const DefaultIcon = ICONS[variant];
-  const iconColor = ICON_COLORS[variant];
 
   return (
     <div className={styles.toastWrapper}>
-      <span className={styles.iconSlot} style={{ color: iconColor }}>
+      <span className={clsx(styles.iconSlot, styles.iconColor?.[variant])}>
         {icon ?? <DefaultIcon size={14} />}
       </span>
       {message}

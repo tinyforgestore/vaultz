@@ -1,9 +1,13 @@
+// NOTE: The `favicon` column on the `passwords` table stores a Simple Icons
+// brand *slug* (e.g. `"github"`, `"figma"`), NOT a URL or image. The slug is
+// used at render-time by the FE to look up an icon from `simple-icons`. The
+// column name is historical; it has not been renamed to keep migrations small.
 use rusqlite::{params, Result as SqlResult};
 
 use super::{CreatePasswordInput, Database, PasswordEntry, UpdatePasswordInput};
 
 impl Database {
-    const PASSWORD_COLUMNS: &str = "id, name, username, email, password, website, notes, recovery_email, is_favorite, folder_id, created_at, updated_at";
+    const PASSWORD_COLUMNS: &str = "id, name, username, email, password, website, notes, recovery_email, is_favorite, folder_id, favicon, created_at, updated_at";
 
     fn row_to_password(row: &rusqlite::Row) -> rusqlite::Result<PasswordEntry> {
         Ok(PasswordEntry {
@@ -17,8 +21,9 @@ impl Database {
             recovery_email: row.get(7)?,
             is_favorite: row.get::<_, i64>(8)? != 0,
             folder_id: row.get::<_, i64>(9)?.to_string(),
-            created_at: row.get(10)?,
-            updated_at: row.get(11)?,
+            favicon: row.get(10)?,
+            created_at: row.get(11)?,
+            updated_at: row.get(12)?,
         })
     }
 
@@ -60,8 +65,8 @@ impl Database {
             .parse()
             .unwrap_or(1);
         self.conn.execute(
-            "INSERT INTO passwords (name, username, password, website, notes, folder_id) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-            params![input.service_name, input.username, input.password, input.url, input.notes, folder_id],
+            "INSERT INTO passwords (name, username, password, website, notes, folder_id, favicon) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+            params![input.service_name, input.username, input.password, input.url, input.notes, folder_id, input.favicon],
         )?;
         let id = self.conn.last_insert_rowid();
         self.get_password_by_id(id)?.ok_or(rusqlite::Error::QueryReturnedNoRows)
@@ -106,6 +111,13 @@ impl Database {
         if let Some(ref v) = updates.folder_id {
             set_clauses.push("folder_id = ?".to_string());
             param_values.push(Box::new(v.parse::<i64>().unwrap_or(1)));
+        }
+        // Tri-state favicon: outer Some means the field was present in the
+        // request; the inner Option distinguishes "set to slug" from
+        // "set to NULL" (user picked "None"). Outer None = leave alone.
+        if let Some(ref v) = updates.favicon {
+            set_clauses.push("favicon = ?".to_string());
+            param_values.push(Box::new(v.clone()));
         }
 
         if set_clauses.is_empty() {
@@ -190,6 +202,7 @@ mod tests {
             url: Some("https://github.com".to_string()),
             notes: None,
             folder: Some(folder_id.to_string()),
+            favicon: None,
         }
     }
 
@@ -255,6 +268,65 @@ mod tests {
             ..Default::default()
         }).unwrap();
         assert!(updated.is_favorite);
+    }
+
+    #[test]
+    fn create_password_roundtrips_favicon() {
+        let db = in_memory_db();
+        let fid = seed_folder(&db);
+        let mut input = make_input(fid);
+        input.favicon = Some("github".to_string());
+        let pw = db.create_password(&input).unwrap();
+        assert_eq!(pw.favicon.as_deref(), Some("github"));
+    }
+
+    #[test]
+    fn update_password_favicon() {
+        let db = in_memory_db();
+        let fid = seed_folder(&db);
+        let pw = db.create_password(&make_input(fid)).unwrap();
+        let id: i64 = pw.id.parse().unwrap();
+        let updated = db.update_password(id, &UpdatePasswordInput {
+            favicon: Some(Some("figma".to_string())),
+            ..Default::default()
+        }).unwrap();
+        assert_eq!(updated.favicon.as_deref(), Some("figma"));
+    }
+
+    #[test]
+    fn update_password_favicon_set_then_clear_to_null() {
+        let db = in_memory_db();
+        let fid = seed_folder(&db);
+        let mut input = make_input(fid);
+        input.favicon = Some("github".to_string());
+        let pw = db.create_password(&input).unwrap();
+        let id: i64 = pw.id.parse().unwrap();
+        // Sanity: created with slug.
+        assert_eq!(pw.favicon.as_deref(), Some("github"));
+
+        // Round-trip: explicit clear via Some(None) → column becomes NULL.
+        let updated = db.update_password(id, &UpdatePasswordInput {
+            favicon: Some(None),
+            ..Default::default()
+        }).unwrap();
+        assert_eq!(updated.favicon, None);
+    }
+
+    #[test]
+    fn update_password_favicon_absent_leaves_value_alone() {
+        let db = in_memory_db();
+        let fid = seed_folder(&db);
+        let mut input = make_input(fid);
+        input.favicon = Some("github".to_string());
+        let pw = db.create_password(&input).unwrap();
+        let id: i64 = pw.id.parse().unwrap();
+        // No favicon field in update → existing value preserved.
+        let updated = db.update_password(id, &UpdatePasswordInput {
+            name: Some("Renamed".to_string()),
+            ..Default::default()
+        }).unwrap();
+        assert_eq!(updated.favicon.as_deref(), Some("github"));
+        assert_eq!(updated.name, "Renamed");
     }
 
     #[test]

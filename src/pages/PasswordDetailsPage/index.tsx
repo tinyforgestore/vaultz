@@ -3,7 +3,7 @@ import { Flex, Button, Heading, IconButton, Box, Text } from '@radix-ui/themes';
 import CreatePasswordModal from '@/components/modals/CreatePasswordModal';
 import { usePasswordDetails } from '@/hooks/usePasswordDetails';
 import { FOLDER_ICON_MAP } from '@/constants/folders';
-import { getAvatarColor, getInitials } from '@/utils/avatar';
+import { FaviconAvatar } from '@/components/FaviconAvatar';
 import { Toast } from '@/components/Toast';
 import * as styles from './index.css';
 
@@ -57,9 +57,7 @@ export default function PasswordDetailsPage() {
 
       <Box className={styles.contentArea}>
         <div className={styles.avatarStrip}>
-          <div className={styles.avatarLarge} style={{ background: getAvatarColor(password.name) }}>
-            {getInitials(password.name)}
-          </div>
+          <FaviconAvatar slug={password.favicon} name={password.name} size={52} />
           <div>
             <Box className={styles.entryName}>{password.name}</Box>
             {folderName && (

@@ -1,4 +1,4 @@
-import { style } from '@vanilla-extract/css';
+import { style, styleVariants } from '@vanilla-extract/css';
 import { themeVars } from '@/styles/theme.css';
 
 export const toastWrapper = style({
@@ -19,4 +19,11 @@ export const toastWrapper = style({
 export const iconSlot = style({
   display: 'flex',
   alignItems: 'center',
+});
+
+export const iconColor = styleVariants({
+  default: { color: 'var(--blue-9)' },
+  success: { color: 'var(--green-9)' },
+  warning: { color: 'var(--amber-9)' },
+  error: { color: 'var(--red-9)' },
 });

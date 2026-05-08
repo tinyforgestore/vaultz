@@ -131,13 +131,137 @@ describe('useCreatePassword', () => {
     });
   });
 
-  describe('confirmCreateFolder', () => {
-    it('calls createFolder and updates folder state', async () => {
+  describe('favicon auto-detection', () => {
+    it('auto-derives favicon slug when url changes', () => {
       const { result } = renderHookWithProviders(() => useCreatePassword(makeProps()));
+      act(() => result.current.setUrl('https://github.com'));
+      expect(result.current.faviconPicker.favicon).toBe('github');
+      expect(result.current.faviconPicker.manualOverride).toBe(false);
+    });
+
+    it('clears favicon when url is cleared', () => {
+      const { result } = renderHookWithProviders(() => useCreatePassword(makeProps()));
+      act(() => result.current.setUrl('https://github.com'));
+      expect(result.current.faviconPicker.favicon).toBe('github');
+      act(() => result.current.setUrl(''));
+      expect(result.current.faviconPicker.favicon).toBeNull();
+    });
+
+    it('selectFavicon overrides URL-derived slug', () => {
+      const { result } = renderHookWithProviders(() => useCreatePassword(makeProps()));
+      act(() => result.current.setUrl('https://github.com'));
+      act(() => result.current.faviconPicker.selectFavicon('figma'));
+      expect(result.current.faviconPicker.favicon).toBe('figma');
+      expect(result.current.faviconPicker.manualOverride).toBe(true);
+      // URL change does NOT overwrite when overridden.
+      act(() => result.current.setUrl('https://google.com'));
+      expect(result.current.faviconPicker.favicon).toBe('figma');
+    });
+
+    it('resetFaviconToAuto re-syncs to URL', () => {
+      const { result } = renderHookWithProviders(() => useCreatePassword(makeProps()));
+      act(() => result.current.setUrl('https://github.com'));
+      act(() => result.current.faviconPicker.selectFavicon('figma'));
+      act(() => result.current.faviconPicker.resetFaviconToAuto());
+      expect(result.current.faviconPicker.manualOverride).toBe(false);
+      expect(result.current.faviconPicker.favicon).toBe('github');
+    });
+
+    it('edit mode with None preserves null across URL change', () => {
+      // Regression: previously, manualOverride was init'd from `!!initialData?.favicon`,
+      // so an entry saved with favicon=null treated the URL as the source of truth and
+      // re-derived a slug on mount. Edit mode must preserve a saved "None" choice.
+      const initialData = {
+        id: '1',
+        name: 'GitHub',
+        password: 'secret',
+        website: 'https://github.com',
+        folderId: 'f1',
+        favicon: null as unknown as string | undefined,
+        isFavorite: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      const { result } = renderHookWithProviders(() =>
+        useCreatePassword(makeProps({ initialData }))
+      );
+      // None preserved on mount.
+      expect(result.current.faviconPicker.favicon).toBeNull();
+      expect(result.current.faviconPicker.manualOverride).toBe(true);
+      // URL change does NOT clobber None.
+      act(() => result.current.setUrl('https://google.com'));
+      expect(result.current.faviconPicker.favicon).toBeNull();
+    });
+
+    it('edit mode "Auto" reset re-derives from current URL', () => {
+      const initialData = {
+        id: '1',
+        name: 'GitHub',
+        password: 'secret',
+        website: 'https://github.com',
+        folderId: 'f1',
+        favicon: 'figma',
+        isFavorite: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      const { result } = renderHookWithProviders(() =>
+        useCreatePassword(makeProps({ initialData }))
+      );
+      expect(result.current.faviconPicker.favicon).toBe('figma');
+      act(() => result.current.faviconPicker.resetFaviconToAuto());
+      expect(result.current.faviconPicker.manualOverride).toBe(false);
+      expect(result.current.faviconPicker.favicon).toBe('github');
+    });
+
+    it('initialData favicon is treated as a manual override', () => {
+      const initialData = {
+        id: '1',
+        name: 'GitHub',
+        password: 'secret',
+        website: 'https://github.com',
+        folderId: 'f1',
+        favicon: 'figma',
+        isFavorite: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      const { result } = renderHookWithProviders(() =>
+        useCreatePassword(makeProps({ initialData }))
+      );
+      expect(result.current.faviconPicker.favicon).toBe('figma');
+      expect(result.current.faviconPicker.manualOverride).toBe(true);
+      // URL is github but override keeps favicon stable.
+      act(() => result.current.setUrl('https://google.com'));
+      expect(result.current.faviconPicker.favicon).toBe('figma');
+    });
+
+    it('handleSubmit includes favicon in payload', () => {
+      const onConfirm = vi.fn();
+      const { result } = renderHookWithProviders(() => useCreatePassword({ onConfirm }));
+      act(() => result.current.setServiceName('GitHub'));
+      act(() => result.current.setUsername('u'));
+      act(() => result.current.setPassword('p'));
+      act(() => result.current.setUrl('https://github.com'));
+      const fakeEvent = { preventDefault: vi.fn() } as unknown as React.FormEvent;
+      act(() => result.current.handleSubmit(fakeEvent));
+      const called = onConfirm.mock.calls[0][0] as PasswordFormData;
+      expect(called.favicon).toBe('github');
+    });
+  });
+
+  describe('handleCreateFolderConfirm', () => {
+    it('calls createFolder, updates folder state, and closes the inline folder modal', async () => {
+      const { result } = renderHookWithProviders(() => useCreatePassword(makeProps()));
+      act(() => result.current.setIsCreateFolderOpen(true));
       await act(async () => {
-        await result.current.confirmCreateFolder({ name: 'Work', icon: 'folder' });
+        result.current.handleCreateFolderConfirm({ name: 'Work', icon: 'folder' });
+        // allow the .then chain to flush
+        await Promise.resolve();
+        await Promise.resolve();
       });
       expect(result.current.folder).toBe('f2');
+      expect(result.current.isCreateFolderOpen).toBe(false);
     });
   });
 });

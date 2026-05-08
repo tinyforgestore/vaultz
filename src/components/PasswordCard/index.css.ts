@@ -35,20 +35,6 @@ export const checkbox = style({
   },
 });
 
-export const avatar = style({
-  width: '36px',
-  height: '36px',
-  borderRadius: '10px',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  fontSize: '13px',
-  fontWeight: '700',
-  color: 'white',
-  flexShrink: 0,
-  userSelect: 'none',
-});
-
 export const passwordTitle = style({
   fontSize: '14px',
 });

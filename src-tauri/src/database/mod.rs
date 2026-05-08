@@ -7,6 +7,7 @@ mod license;
 mod master;
 mod passwords;
 mod settings;
+pub mod favicon;
 pub mod models;
 
 pub use models::*;
@@ -41,6 +42,7 @@ CREATE TABLE IF NOT EXISTS passwords (
     recovery_email TEXT,
     is_favorite INTEGER NOT NULL DEFAULT 0,
     folder_id INTEGER NOT NULL,
+    favicon TEXT,
     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%S.000Z', 'now')),
     updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%S.000Z', 'now')),
     FOREIGN KEY (folder_id) REFERENCES folders(id)
@@ -180,6 +182,39 @@ impl Database {
             )?;
         }
 
+        let has_favicon: bool = self
+            .conn
+            .prepare("SELECT favicon FROM passwords LIMIT 0")
+            .is_ok();
+        if !has_favicon {
+            self.conn
+                .execute_batch("ALTER TABLE passwords ADD COLUMN favicon TEXT;")?;
+            self.backfill_favicons()?;
+        }
+
+        Ok(())
+    }
+
+    /// Backfills `favicon` for any password rows where it is NULL but `website`
+    /// is present, deriving the slug from the website hostname.
+    fn backfill_favicons(&self) -> SqlResult<()> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, website FROM passwords WHERE favicon IS NULL AND website IS NOT NULL AND website != ''",
+        )?;
+        let rows: Vec<(i64, String)> = stmt
+            .query_map([], |row| {
+                Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?))
+            })?
+            .collect::<SqlResult<Vec<_>>>()?;
+        drop(stmt);
+        for (id, website) in rows {
+            if let Some(slug) = favicon::slug_from_url(&website) {
+                self.conn.execute(
+                    "UPDATE passwords SET favicon = ?1 WHERE id = ?2",
+                    rusqlite::params![slug, id],
+                )?;
+            }
+        }
         Ok(())
     }
 
@@ -239,5 +274,57 @@ mod tests {
     fn db_file_exists_returns_false_for_nonexistent_path() {
         let dir = std::path::PathBuf::from("/tmp/nonexistent_test_dir_pm_123456");
         assert!(!Database::db_file_exists(&dir));
+    }
+
+    #[test]
+    fn migrations_add_favicon_column_and_backfill() {
+        // Build a legacy schema (no favicon column) and verify the migration
+        // path adds it and backfills slugs from website hostnames.
+        let conn = Connection::open_in_memory().expect("in-memory db");
+        conn.execute_batch("PRAGMA foreign_keys=ON;").unwrap();
+        conn.execute_batch(
+            "CREATE TABLE folders (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, icon TEXT NOT NULL, is_default INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%S.000Z', 'now')));
+             CREATE TABLE master_password (id INTEGER PRIMARY KEY CHECK (id = 1), password_hash TEXT NOT NULL, encryption_salt TEXT, created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%S.000Z', 'now')), updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%S.000Z', 'now')));
+             CREATE TABLE passwords (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                username TEXT,
+                email TEXT,
+                password TEXT NOT NULL,
+                website TEXT,
+                notes TEXT,
+                recovery_email TEXT,
+                is_favorite INTEGER NOT NULL DEFAULT 0,
+                folder_id INTEGER NOT NULL,
+                created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%S.000Z', 'now')),
+                updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%S.000Z', 'now'))
+             );
+             INSERT INTO folders (name, icon, is_default) VALUES ('Default', 'folder', 1);
+             INSERT INTO passwords (name, password, website, folder_id) VALUES ('GH', 's', 'https://github.com', 1);
+             INSERT INTO passwords (name, password, website, folder_id) VALUES ('Goog', 's', 'https://accounts.google.com/x', 1);
+             INSERT INTO passwords (name, password, website, folder_id) VALUES ('Empty', 's', '', 1);
+             INSERT INTO passwords (name, password, website, folder_id) VALUES ('IP', 's', 'http://192.168.0.1', 1);",
+        ).unwrap();
+
+        let db = Database { conn };
+        db.run_migrations().expect("migrations");
+
+        // Column should now exist.
+        let mut stmt = db
+            .conn
+            .prepare("SELECT id, favicon FROM passwords ORDER BY id")
+            .unwrap();
+        let rows: Vec<(i64, Option<String>)> = stmt
+            .query_map([], |row| {
+                Ok((row.get::<_, i64>(0)?, row.get::<_, Option<String>>(1)?))
+            })
+            .unwrap()
+            .collect::<rusqlite::Result<Vec<_>>>()
+            .unwrap();
+
+        assert_eq!(rows[0].1.as_deref(), Some("github"));
+        assert_eq!(rows[1].1.as_deref(), Some("google"));
+        assert_eq!(rows[2].1, None); // empty website
+        assert_eq!(rows[3].1, None); // IPv4
     }
 }

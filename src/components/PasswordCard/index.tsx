@@ -3,7 +3,7 @@ import clsx from 'clsx';
 import { Check, Copy, Star } from 'lucide-react';
 import { Card, Flex, Box, Heading, IconButton } from '@radix-ui/themes';
 import { Password } from '@/types';
-import { getAvatarColor, getInitials } from '@/utils/avatar';
+import { FaviconAvatar } from '@/components/FaviconAvatar';
 import { FOLDER_ICON_MAP } from '@/constants/folders';
 import * as styles from './index.css';
 
@@ -68,9 +68,7 @@ export const PasswordCard = memo(function PasswordCard({
           </Box>
         )}
         {!isSelectionMode && (
-          <div className={styles.avatar} style={{ background: getAvatarColor(password.name) }}>
-            {getInitials(password.name)}
-          </div>
+          <FaviconAvatar slug={password.favicon} name={password.name} />
         )}
         <Box className={styles.cardBody}>
           <Flex align="center" gap="1" mb="0">

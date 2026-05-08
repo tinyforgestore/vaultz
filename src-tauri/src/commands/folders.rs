@@ -104,6 +104,7 @@ mod tests {
             url: None,
             notes: None,
             folder: Some(src.id.clone()),
+            favicon: None,
         }).unwrap();
         delete_folder_logic(&db, &src.id).unwrap();
         let folders = db.get_all_folders().unwrap();

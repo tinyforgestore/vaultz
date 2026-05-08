@@ -136,6 +136,8 @@ export const mainContent = style({
 
 export const searchContainer = style({
   width: '100%',
+  // Override Radix Themes' size-2 radius token so the input is pill-shaped.
+  vars: { '--radius-2': '999px' },
 });
 
 export const passwordList = style({

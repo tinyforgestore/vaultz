@@ -78,6 +78,21 @@ describe('PasswordCard', () => {
     expect(onCopyPassword).toHaveBeenCalledTimes(1);
   });
 
+  it('renders the FaviconAvatar with the password favicon slug', () => {
+    render(
+      <PasswordCard
+        password={makePassword({ favicon: 'github' })}
+        {...defaultProps}
+      />
+    );
+    expect(screen.getByTestId('favicon-avatar-icon')).toBeInTheDocument();
+  });
+
+  it('falls back to initials avatar when password has no favicon', () => {
+    render(<PasswordCard password={makePassword()} {...defaultProps} />);
+    expect(screen.getByTestId('favicon-avatar-fallback')).toBeInTheDocument();
+  });
+
   it('calls onToggleFavorite when star button is clicked', () => {
     const onToggleFavorite = vi.fn();
     render(<PasswordCard password={makePassword()} {...defaultProps} onToggleFavorite={onToggleFavorite} />);

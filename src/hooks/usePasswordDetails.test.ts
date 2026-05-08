@@ -93,6 +93,49 @@ describe('usePasswordDetails', () => {
       expect(result.current.isEditModalOpen).toBe(false);
     });
 
+    it('passes favicon: null through to update_password (clear-on-edit)', async () => {
+      // Regression for C1: previously `favicon ?? undefined` collapsed null to
+      // undefined, which Tauri's serializer drops. With the tri-state on the
+      // Rust side we now MUST send `null` explicitly so the column can be
+      // cleared.
+      const { invoke } = await import('@tauri-apps/api/core');
+      const mockInvoke = vi.mocked(invoke);
+      const updated = makePassword({ favicon: undefined });
+      mockInvoke.mockResolvedValueOnce({
+        ...updated,
+        createdAt: updated.createdAt.toISOString(),
+        updatedAt: updated.updatedAt.toISOString(),
+      });
+      const { result } = setup();
+      await act(async () => result.current.confirmEdit({
+        serviceName: 'X', username: 'u', password: 'p', url: '', notes: '', folder: 'f1',
+        favicon: null,
+      }));
+      const calls = mockInvoke.mock.calls.filter((c) => c[0] === 'update_password');
+      expect(calls.length).toBeGreaterThan(0);
+      const arg = calls[0][1] as { updates: { favicon: unknown } };
+      expect(arg.updates.favicon).toBeNull();
+    });
+
+    it('passes favicon: <slug> through to update_password', async () => {
+      const { invoke } = await import('@tauri-apps/api/core');
+      const mockInvoke = vi.mocked(invoke);
+      const updated = makePassword({ favicon: 'github' });
+      mockInvoke.mockResolvedValueOnce({
+        ...updated,
+        createdAt: updated.createdAt.toISOString(),
+        updatedAt: updated.updatedAt.toISOString(),
+      });
+      const { result } = setup();
+      await act(async () => result.current.confirmEdit({
+        serviceName: 'X', username: 'u', password: 'p', url: '', notes: '', folder: 'f1',
+        favicon: 'github',
+      }));
+      const calls = mockInvoke.mock.calls.filter((c) => c[0] === 'update_password');
+      const arg = calls[0][1] as { updates: { favicon: unknown } };
+      expect(arg.updates.favicon).toBe('github');
+    });
+
     it('shows error toast when update_password rejects', async () => {
       const { invoke } = await import('@tauri-apps/api/core');
       const mockInvoke = vi.mocked(invoke);

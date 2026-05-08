@@ -265,6 +265,7 @@ mod tests {
             url: None,
             notes: None,
             folder: Some(fid),
+            favicon: None,
         }).unwrap();
 
         let salt = b"salt-16-bytes-ok";
@@ -300,6 +301,7 @@ mod tests {
             url: None,
             notes: None,
             folder: Some(fid),
+            favicon: None,
         }).unwrap();
 
         // Migration skips already-encrypted

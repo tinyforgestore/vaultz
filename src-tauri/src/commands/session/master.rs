@@ -158,6 +158,7 @@ mod tests {
             url: None,
             notes: Some(encrypt_field(&old_key, "note").unwrap()),
             folder: Some(folder.id),
+            favicon: None,
         }).unwrap();
 
         assert!(change_password(&db, "old", "new", salt));

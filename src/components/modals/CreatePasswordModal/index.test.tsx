@@ -181,6 +181,23 @@ describe('CreatePasswordModal', () => {
     });
   });
 
+  it('renders the icon row with auto-detected chip text after URL is typed', async () => {
+    renderModal();
+    fireEvent.change(screen.getByLabelText(/^URL/i), { target: { value: 'https://github.com' } });
+    await waitFor(() => {
+      expect(screen.getByText(/Auto: github/i)).toBeInTheDocument();
+    });
+  });
+
+  it('opens the icon picker via Change button', async () => {
+    const user = userEvent.setup();
+    renderModal();
+    await user.click(screen.getByRole('button', { name: /^Change$/ }));
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText(/Filter icons/i)).toBeInTheDocument();
+    });
+  });
+
   it('"New" folder button opens CreateFolderModal', async () => {
     const user = userEvent.setup();
     renderModal();
