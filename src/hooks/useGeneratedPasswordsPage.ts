@@ -4,6 +4,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { EVENTS } from '@/constants/events';
 import { useTauriEvent } from './useTauriEvent';
 import { useClipboard } from './useClipboard';
+import { useGeneratedPasswordsPageKeys } from './useGeneratedPasswordsPageKeys';
 
 export interface GeneratedPasswordItem {
   id: number;
@@ -120,77 +121,31 @@ export function useGeneratedPasswordsPage() {
     [hiddenIds, handleHide, handleReveal],
   );
 
-  // Keyboard navigation — mirrors dashboard list page (PM-021)
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (confirmClear) return;
-      const target = e.target as HTMLElement | null;
-      const tag = target?.tagName;
-      const isInInput =
-        tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'BUTTON' || target?.isContentEditable;
-      if (isInInput) return;
+  // Keyboard navigation — mirrors dashboard list page (PM-021).
+  // Owned by its own module (kurippa pattern).
+  const hasSelection = selectedIndex >= 0 && selectedIndex < history.length;
+  const selected = hasSelection ? history[selectedIndex] : null;
 
-      // ArrowLeft → back to dashboard (parallels Settings page behavior)
-      if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        handleBack();
-        return;
-      }
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        setSelectedIndex((i) => Math.min(i + 1, history.length - 1));
-        return;
-      }
-      if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        setSelectedIndex((i) => Math.max(i - 1, 0));
-        return;
-      }
-      if (selectedIndex < 0 || selectedIndex >= history.length) {
-        if (e.key === 'Escape') {
-          e.preventDefault();
-          handleBack();
-        }
-        return;
-      }
-      const selected = history[selectedIndex];
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        handleCreateEntry(selected.password);
-        return;
-      }
-      if (e.key === 'c' && !e.metaKey && !e.ctrlKey && !e.altKey) {
-        e.preventDefault();
-        handleCopy(selected);
-        return;
-      }
-      if (e.key === 'Delete' || e.key === 'Backspace') {
-        e.preventDefault();
-        handleDelete(selected.id);
-        return;
-      }
-      if (e.key === 'r' && !e.metaKey && !e.ctrlKey && !e.altKey) {
-        e.preventDefault();
-        handleToggleVisibility(selected.id);
-        return;
-      }
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        setSelectedIndex(-1);
-      }
-    };
-    document.addEventListener('keydown', handleKey);
-    return () => document.removeEventListener('keydown', handleKey);
-  }, [
-    history,
-    selectedIndex,
-    confirmClear,
-    handleCopy,
-    handleDelete,
-    handleCreateEntry,
-    handleToggleVisibility,
-    handleBack,
-  ]);
+  useGeneratedPasswordsPageKeys({
+    enabled: !confirmClear,
+    hasSelection,
+    onBack: handleBack,
+    onSelectNext: () => setSelectedIndex((i) => Math.min(i + 1, history.length - 1)),
+    onSelectPrev: () => setSelectedIndex((i) => Math.max(i - 1, 0)),
+    onDeselect: () => setSelectedIndex(-1),
+    onConfirm: () => {
+      if (selected) handleCreateEntry(selected.password);
+    },
+    onCopy: () => {
+      if (selected) handleCopy(selected);
+    },
+    onDelete: () => {
+      if (selected) handleDelete(selected.id);
+    },
+    onToggleVisibility: () => {
+      if (selected) handleToggleVisibility(selected.id);
+    },
+  });
 
   return {
     history,

@@ -1,4 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
+import { isFromInput } from '@/utils/keyboard';
+import { useLatestArgs } from './useLatestArgs';
 
 interface PasswordSnapshot {
   username?: string;
@@ -33,20 +35,13 @@ interface UsePasswordDetailsKeysArgs {
  * or when `enabled` is false (e.g. a modal is open).
  */
 export function usePasswordDetailsKeys(args: UsePasswordDetailsKeysArgs) {
-  const argsRef = useRef(args);
-  useEffect(() => {
-    argsRef.current = args;
-  });
+  const argsRef = useLatestArgs(args);
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       const { enabled, password, onBack, onEdit, onToggleFavorite, onCopyField } = argsRef.current;
       if (!enabled) return;
-      const target = e.target as HTMLElement | null;
-      const tag = target?.tagName;
-      const inInput =
-        tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || !!target?.isContentEditable;
-      if (inInput) return;
+      if (isFromInput(e)) return;
 
       if (e.key === 'Escape' || e.key === 'Backspace') {
         e.preventDefault();
@@ -87,5 +82,5 @@ export function usePasswordDetailsKeys(args: UsePasswordDetailsKeysArgs) {
 
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
-  }, []);
+  }, [argsRef]);
 }

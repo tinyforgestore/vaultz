@@ -1,16 +1,18 @@
 import { useEffect } from 'react';
+import { isFromInput } from '@/utils/keyboard';
+import { useLatestArgs } from './useLatestArgs';
 
 export function resolveSearchInput(
   ref: React.RefObject<HTMLInputElement | HTMLElement | null>,
 ): HTMLInputElement | null {
   const el = ref.current;
   if (!el) return null;
-  return el instanceof HTMLInputElement
-    ? el
+  return el.tagName === 'INPUT'
+    ? (el as HTMLInputElement)
     : (el.querySelector('input') as HTMLInputElement | null);
 }
 
-interface UseKeyboardNavOptions {
+interface UseDashboardKeysOptions {
   itemCount: number;
   selectedIndex: number;
   isAnyModalOpen: boolean;
@@ -34,129 +36,107 @@ interface UseKeyboardNavOptions {
   };
 }
 
-export function useKeyboardNav(options: UseKeyboardNavOptions) {
-  const {
-    itemCount,
-    selectedIndex,
-    isAnyModalOpen,
-    isSelectionMode,
-    searchInputRef,
-    onSelectIndex,
-    onFocusSearch,
-    onClearSearch,
-    onNextFolder,
-    onPrevFolder,
-    onToggleSelectionMode,
-    itemActions,
-  } = options;
-
-  const { onEnter, onCopy, onFavorite, onDelete, onNewPassword, onNewFolder, onToggleItemSelection, onOpenHistory } = itemActions;
+export function useDashboardKeys(options: UseDashboardKeysOptions) {
+  const argsRef = useLatestArgs(options);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (isAnyModalOpen) return;
+      const a = argsRef.current;
+      if (a.isAnyModalOpen) return;
 
-      const target = e.target as HTMLElement;
-      const tag = target.tagName;
-      const isInInput =
-        tag === 'INPUT' ||
-        tag === 'TEXTAREA' ||
-        tag === 'SELECT' ||
-        tag === 'BUTTON' ||
-        target.isContentEditable;
-
-      // Resolve the actual search input element (ref may point to a container div)
-      const searchEl = resolveSearchInput(searchInputRef);
-
-      // From search input only: ArrowDown exits search and selects first item
-      if (searchEl && target === searchEl) {
+      // Resolve the actual search input element (ref may point to a container div).
+      // Special-case ArrowDown from the search input FIRST, before the generic
+      // isFromInput guard — pressing ArrowDown while focused inside the search
+      // input must still move focus into the list.
+      const searchEl = resolveSearchInput(a.searchInputRef);
+      if (searchEl && e.target === searchEl) {
         if (e.key === 'ArrowDown') {
-          if (itemCount > 0) {
+          if (a.itemCount > 0) {
             e.preventDefault();
-            onSelectIndex(0);
+            a.onSelectIndex(0);
             searchEl.blur();
           }
         }
         return;
       }
 
-      // Skip all other shortcuts when focus is inside a form element or button
-      if (isInInput) return;
+      // Skip all other shortcuts when focus is inside a form element or button.
+      if (isFromInput(e, { includeButton: true })) return;
 
       if (e.key === '/' || (e.metaKey && e.key === 'k')) {
         e.preventDefault();
-        onFocusSearch();
+        a.onFocusSearch();
         return;
       }
 
       if (e.key === 'ArrowDown') {
         e.preventDefault();
-        onSelectIndex(Math.min(selectedIndex + 1, itemCount - 1));
+        a.onSelectIndex(Math.min(a.selectedIndex + 1, a.itemCount - 1));
         return;
       }
 
       if (e.key === 'ArrowUp') {
         e.preventDefault();
-        if (selectedIndex <= 0) {
-          onFocusSearch();
+        if (a.selectedIndex <= 0) {
+          a.onFocusSearch();
         } else {
-          onSelectIndex(selectedIndex - 1);
+          a.onSelectIndex(a.selectedIndex - 1);
         }
         return;
       }
 
       if (e.key === 'ArrowLeft') {
         e.preventDefault();
-        onPrevFolder();
+        a.onPrevFolder();
         return;
       }
 
       if (e.key === 'ArrowRight') {
         e.preventDefault();
-        onNextFolder();
+        a.onNextFolder();
         return;
       }
 
       if (e.key === 'Enter') {
-        if (selectedIndex >= 0) {
+        if (a.selectedIndex >= 0) {
           e.preventDefault();
-          onEnter(selectedIndex);
+          a.itemActions.onEnter(a.selectedIndex);
         }
         return;
       }
 
       if (e.key === 'c' && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        if (selectedIndex >= 0) {
+        if (a.selectedIndex >= 0) {
           e.preventDefault();
-          onCopy(selectedIndex);
+          a.itemActions.onCopy(a.selectedIndex);
         }
         return;
       }
 
       if (e.key === 'f' && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        if (selectedIndex >= 0) {
+        if (a.selectedIndex >= 0) {
           e.preventDefault();
-          onFavorite(selectedIndex);
+          a.itemActions.onFavorite(a.selectedIndex);
         }
         return;
       }
 
       if (e.key === 'n' && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
         e.preventDefault();
-        onNewPassword();
+        a.itemActions.onNewPassword();
         return;
       }
 
       if (e.key === 'N' && e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
         e.preventDefault();
-        onNewFolder();
+        a.itemActions.onNewFolder();
         return;
       }
 
       if (e.key === 'Delete') {
-        if (selectedIndex >= 0) {
+        if (a.selectedIndex >= 0) {
           e.preventDefault();
-          onDelete(selectedIndex);
+          a.itemActions.onDelete(a.selectedIndex);
         }
         return;
       }
@@ -164,22 +144,22 @@ export function useKeyboardNav(options: UseKeyboardNavOptions) {
       // X — toggle selection mode
       if (e.key === 'x' && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
         e.preventDefault();
-        onToggleSelectionMode();
+        a.onToggleSelectionMode();
         return;
       }
 
       // H — open generated passwords history
       if (e.key === 'h' && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
         e.preventDefault();
-        onOpenHistory();
+        a.itemActions.onOpenHistory();
         return;
       }
 
       // Space — toggle item selection (only when in selection mode and item is highlighted)
       if (e.key === ' ') {
-        if (isSelectionMode && selectedIndex >= 0) {
+        if (a.isSelectionMode && a.selectedIndex >= 0) {
           e.preventDefault();
-          onToggleItemSelection(selectedIndex);
+          a.itemActions.onToggleItemSelection(a.selectedIndex);
         }
         return; // always return to prevent page scroll, even when not in selection mode
       }
@@ -187,10 +167,10 @@ export function useKeyboardNav(options: UseKeyboardNavOptions) {
       if (e.key === 'Escape') {
         if (searchEl && searchEl.value !== '') {
           e.preventDefault();
-          onClearSearch();
-        } else if (selectedIndex >= 0) {
+          a.onClearSearch();
+        } else if (a.selectedIndex >= 0) {
           e.preventDefault();
-          onSelectIndex(-1);
+          a.onSelectIndex(-1);
         }
         // If neither condition is true, let native Escape propagate (e.g. Radix dialog dismiss)
         return;
@@ -199,25 +179,5 @@ export function useKeyboardNav(options: UseKeyboardNavOptions) {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [
-    itemCount,
-    selectedIndex,
-    isAnyModalOpen,
-    isSelectionMode,
-    onSelectIndex,
-    onEnter,
-    onCopy,
-    onFavorite,
-    onDelete,
-    onNewPassword,
-    onNewFolder,
-    onToggleItemSelection,
-    onNextFolder,
-    onPrevFolder,
-    onFocusSearch,
-    onClearSearch,
-    onToggleSelectionMode,
-    onOpenHistory,
-    searchInputRef,
-  ]);
+  }, [argsRef]);
 }

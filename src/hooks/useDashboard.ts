@@ -26,7 +26,7 @@ import { useClipboard } from './useClipboard';
 import { usePasswordSelection } from './usePasswordSelection';
 import { useCreateFolder } from './useCreateFolder';
 import { useLimitCheck } from './useLimitCheck';
-import { useKeyboardNav, resolveSearchInput } from './useKeyboardNav';
+import { useDashboardKeys, resolveSearchInput } from './useDashboardKeys';
 import { usePasswordsStore, useFoldersStore, useLicenseStore, useSessionStore } from '@/store';
 
 const FAVORITES_ID = SPECIAL_FOLDERS.FAVORITES.toString();
@@ -186,7 +186,7 @@ export function useDashboard() {
     passwordToDelete !== null ||
     activeModal !== null;
 
-  useKeyboardNav({
+  useDashboardKeys({
     itemCount: passwords.length,
     selectedIndex,
     isAnyModalOpen,

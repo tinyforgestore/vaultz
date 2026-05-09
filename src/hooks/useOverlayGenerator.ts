@@ -1,8 +1,9 @@
-import { useEffect, useCallback, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { HIDE_AFTER_COPY_MS } from '@/constants/overlay';
 import { recordGeneratedPassword } from '@/utils/recordGeneratedPassword';
 import { useVaultLockState } from './useVaultLockState';
+import { useOverlayGeneratorKeys } from './useOverlayGeneratorKeys';
 
 interface UseOverlayGeneratorReturn {
   isLocked: boolean;
@@ -35,14 +36,8 @@ export function useOverlayGenerator(): UseOverlayGeneratorReturn {
     invoke('hide_app_after_copy').catch(() => {});
   }, []);
 
-  // Escape to close — handler owned by the hook (M2).
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') dismissApp();
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [dismissApp]);
+  // Keyboard shortcuts owned by their own module (kurippa pattern).
+  useOverlayGeneratorKeys({ onDismiss: dismissApp });
 
   const recordGenerated = useCallback((password: string) => {
     recordGeneratedPassword(password);

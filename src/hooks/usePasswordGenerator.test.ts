@@ -143,4 +143,22 @@ describe('usePasswordGenerator', () => {
     act(() => result.current.setLength([8]));
     expect(result.current.generatedPassword).toHaveLength(8);
   });
+
+  it('Enter shortcut calls onRecordGenerated and onUsePassword with the current password', () => {
+    const onUsePassword = vi.fn();
+    const onRecordGenerated = vi.fn();
+    const { result } = renderHook(() =>
+      usePasswordGenerator({
+        onUsePassword,
+        onRecordGenerated,
+        enableShortcuts: true,
+      }),
+    );
+    const pw = result.current.generatedPassword;
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    });
+    expect(onRecordGenerated).toHaveBeenCalledWith(pw);
+    expect(onUsePassword).toHaveBeenCalledWith(pw);
+  });
 });

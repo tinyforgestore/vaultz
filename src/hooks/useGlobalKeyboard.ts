@@ -15,7 +15,7 @@ export function useGlobalKeyboard() {
       const tag = target.tagName;
       // Only suppress when the user is actively typing. BUTTON is intentionally
       // excluded — global shortcuts (Cmd+,, Cmd+Shift+L) should fire even when a
-      // button is focused (e.g. Radix Select triggers). See useKeyboardNav for the
+      // button is focused (e.g. Radix Select triggers). See useDashboardKeys for the
       // Dashboard-local guard that does suppress shortcuts on focused buttons.
       const isTypingContext =
         tag === 'INPUT' || tag === 'TEXTAREA' || target.isContentEditable;

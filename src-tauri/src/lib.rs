@@ -4,13 +4,14 @@ use tauri::{
     tray::{MouseButtonState, TrayIconBuilder, TrayIconEvent},
     App, Emitter, Manager, State,
 };
-use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, ShortcutState};
+use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 
 mod commands;
 pub mod constants;
 mod crypto;
 mod database;
 mod session_artifacts;
+mod shortcuts;
 mod state;
 mod window_helpers;
 
@@ -99,16 +100,16 @@ fn setup_tray(app: &mut App) -> tauri::Result<()> {
 fn register_global_shortcuts(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
     let handle = app.handle().clone();
     let search_shortcut = tauri_plugin_global_shortcut::Shortcut::new(
-        Some(Modifiers::META | Modifiers::SHIFT),
-        Code::KeyL,
+        Some(shortcuts::SEARCH_MODS),
+        shortcuts::SEARCH_KEY,
     );
     let gen_shortcut = tauri_plugin_global_shortcut::Shortcut::new(
-        Some(Modifiers::META | Modifiers::SHIFT),
-        Code::KeyG,
+        Some(shortcuts::GEN_MODS),
+        shortcuts::GEN_KEY,
     );
     let main_shortcut = tauri_plugin_global_shortcut::Shortcut::new(
-        Some(Modifiers::META | Modifiers::ALT),
-        Code::KeyV,
+        Some(shortcuts::MAIN_MODS),
+        shortcuts::MAIN_KEY,
     );
 
     app.global_shortcut()

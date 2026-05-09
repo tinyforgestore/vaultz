@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { buildPassword } from '@/utils/passwordGenerator';
+import { usePasswordGeneratorKeys } from './usePasswordGeneratorKeys';
 
 interface UsePasswordGeneratorProps {
   onUsePassword: (password: string) => void;
@@ -45,57 +46,18 @@ export function usePasswordGenerator({ onUsePassword, enableShortcuts = false, o
     if (generatedPassword) onGeneratedChange?.(generatedPassword);
   }, [generatedPassword, onGeneratedChange]);
 
-  useEffect(() => {
-    if (!enableShortcuts) return;
-    const handleKey = (e: KeyboardEvent) => {
-      const target = e.target;
-      if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
-        return;
-      }
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        onRecordGenerated?.(generatedPassword);
-        onUsePassword(generatedPassword);
-        return;
-      }
-      if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        setLength((prev) => [Math.max(MIN_LENGTH, prev[0] - 1)]);
-        return;
-      }
-      if (e.key === 'ArrowRight') {
-        e.preventDefault();
-        setLength((prev) => [Math.min(MAX_LENGTH, prev[0] + 1)]);
-        return;
-      }
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
-      switch (e.key.toLowerCase()) {
-        case 'u':
-          e.preventDefault();
-          setIncludeUppercase((v) => !v);
-          break;
-        case 'l':
-          e.preventDefault();
-          setIncludeLowercase((v) => !v);
-          break;
-        case 'n':
-          e.preventDefault();
-          setIncludeNumbers((v) => !v);
-          break;
-        case 's':
-          e.preventDefault();
-          setIncludeSymbols((v) => !v);
-          break;
-        case 'r':
-          e.preventDefault();
-          generatePassword();
-          break;
-      }
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enableShortcuts, generatedPassword, onUsePassword, onRecordGenerated]);
+  // Keyboard shortcuts owned by their own module (kurippa pattern).
+  usePasswordGeneratorKeys({
+    enabled: enableShortcuts,
+    onUsePassword: handleUsePassword,
+    onDecrementLength: () => setLength((prev) => [Math.max(MIN_LENGTH, prev[0] - 1)]),
+    onIncrementLength: () => setLength((prev) => [Math.min(MAX_LENGTH, prev[0] + 1)]),
+    onToggleUppercase: () => setIncludeUppercase((v) => !v),
+    onToggleLowercase: () => setIncludeLowercase((v) => !v),
+    onToggleNumbers: () => setIncludeNumbers((v) => !v),
+    onToggleSymbols: () => setIncludeSymbols((v) => !v),
+    onRegenerate: generatePassword,
+  });
 
   return {
     generatedPassword,
