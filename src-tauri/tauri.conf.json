@@ -34,7 +34,8 @@
         "transparent": true,
         "alwaysOnTop": true,
         "skipTaskbar": true,
-        "center": true
+        "center": true,
+        "shadow": false
       },
       {
         "label": "overlay-generator",
@@ -48,7 +49,8 @@
         "transparent": true,
         "alwaysOnTop": true,
         "skipTaskbar": true,
-        "center": true
+        "center": true,
+        "shadow": false
       }
     ],
     "security": {

@@ -4,6 +4,7 @@ const NS_UTF8_STRING_ENCODING: usize = 4;
 /// Writes text to the clipboard with `org.nspasteboard.ConcealedType` set,
 /// which signals clipboard managers (Maccy, etc.) to skip recording the entry.
 #[tauri::command]
+#[cfg_attr(not(target_os = "macos"), allow(unused_variables))]
 pub fn write_secret_to_clipboard(text: String) -> Result<(), String> {
     #[cfg(target_os = "macos")]
     unsafe {
