@@ -37,6 +37,13 @@ describe('usePasswordDetailsKeys', () => {
     expect(h.onBack).toHaveBeenCalledTimes(1);
   });
 
+  it('ArrowLeft calls onBack', () => {
+    const h = makeHandlers();
+    renderHook(() => usePasswordDetailsKeys({ enabled: true, password: samplePassword, ...h }));
+    act(() => press('ArrowLeft'));
+    expect(h.onBack).toHaveBeenCalledTimes(1);
+  });
+
   it('1 copies username', () => {
     const h = makeHandlers();
     renderHook(() => usePasswordDetailsKeys({ enabled: true, password: samplePassword, ...h }));
@@ -104,6 +111,17 @@ describe('usePasswordDetailsKeys', () => {
     input.focus();
     act(() => input.dispatchEvent(new KeyboardEvent('keydown', { key: '1', bubbles: true })));
     expect(h.onCopyField).not.toHaveBeenCalled();
+    input.remove();
+  });
+
+  it('does not fire onBack when target is an input', () => {
+    const h = makeHandlers();
+    renderHook(() => usePasswordDetailsKeys({ enabled: true, password: samplePassword, ...h }));
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+    input.focus();
+    act(() => input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true })));
+    expect(h.onBack).not.toHaveBeenCalled();
     input.remove();
   });
 

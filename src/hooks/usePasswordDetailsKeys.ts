@@ -24,7 +24,7 @@ interface UsePasswordDetailsKeysArgs {
  * re-renders don't re-attach (kurippa pattern, mirrors useTauriEvent).
  *
  * Shortcuts (no modifier):
- * - Escape / Backspace → onBack
+ * - ArrowLeft / Escape / Backspace → onBack
  * - 1 → copy username
  * - 2 → copy password
  * - 3 → copy URL
@@ -43,7 +43,9 @@ export function usePasswordDetailsKeys(args: UsePasswordDetailsKeysArgs) {
       if (!enabled) return;
       if (isFromInput(e)) return;
 
-      if (e.key === 'Escape' || e.key === 'Backspace') {
+      // ArrowLeft mirrors Settings / Generated Passwords pages → back to dashboard.
+      // Escape and Backspace are kept for parity with existing detail-page behavior.
+      if (e.key === 'ArrowLeft' || e.key === 'Escape' || e.key === 'Backspace') {
         e.preventDefault();
         onBack();
         return;
