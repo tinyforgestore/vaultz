@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { act } from '@testing-library/react';
+import { createStore } from 'jotai';
 
 vi.mock('@tauri-apps/api/core');
 vi.mock('@tauri-apps/plugin-dialog');
@@ -8,7 +9,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { save } from '@tauri-apps/plugin-dialog';
 import { renderHookWithProviders } from '@/testUtils';
 import { useSettings } from './useSettings';
-import { isAuthenticatedAtom } from '@/store/atoms';
+import { isAuthenticatedAtom, licenseStatusAtom } from '@/store/atoms';
 
 const mockInvoke = vi.mocked(invoke);
 const mockSave = vi.mocked(save);
@@ -172,6 +173,42 @@ describe('useSettings', () => {
       await act(async () => result.current.confirmDestroyVault());
       expect(mockInvoke).toHaveBeenCalledWith('destroy_vault');
       expect(store.get(isAuthenticatedAtom)).toBe(false);
+    });
+  });
+
+  describe('license refresh on mount', () => {
+    it('runs the refreshLicenseAtom chain (status → validate → status)', async () => {
+      const calls: string[] = [];
+      mockInvoke.mockImplementation((cmd: string) => {
+        calls.push(cmd);
+        if (cmd === 'get_license_status') return Promise.resolve({ is_active: true });
+        if (cmd === 'validate_license') return Promise.resolve(true);
+        return Promise.resolve(null);
+      });
+      const { store } = setup();
+      await act(async () => {});
+      const licenseCalls = calls.filter((c) => c !== 'get_lock_timeout');
+      expect(licenseCalls).toEqual(['get_license_status', 'validate_license', 'get_license_status']);
+      expect(store.get(licenseStatusAtom)).toEqual({ is_active: true });
+    });
+
+    it('keeps a known-good licenseStatus when get_license_status rejects', async () => {
+      // Pre-seeded, or the assertion would be vacuous: the atom's default IS null.
+      // A transient IPC failure while opening Settings must not flip a Pro user to
+      // Free with upgrade prompts.
+      mockInvoke.mockImplementation((cmd: string) => {
+        if (cmd === 'get_license_status') return Promise.reject(new Error('db error'));
+        return Promise.resolve(null);
+      });
+      const store = createStore();
+      store.set(licenseStatusAtom, { is_active: true, activation_usage: 1, activation_limit: 3 });
+      renderHookWithProviders(() => useSettings(), { store });
+      await act(async () => {});
+      expect(store.get(licenseStatusAtom)).toEqual({
+        is_active: true,
+        activation_usage: 1,
+        activation_limit: 3,
+      });
     });
   });
 });

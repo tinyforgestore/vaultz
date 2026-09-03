@@ -4,8 +4,7 @@ import { useSetAtom } from 'jotai';
 import { invoke } from '@tauri-apps/api/core';
 import { save } from '@tauri-apps/plugin-dialog';
 import { VAULT_FILE_FILTER } from '@/constants/vault';
-import { changeMasterPasswordAtom, licenseStatusAtom, logoutAtom, activeModalAtom } from '@/store/atoms';
-import { LicenseStatus } from '@/types/license';
+import { changeMasterPasswordAtom, licenseStatusAtom, refreshLicenseAtom, logoutAtom, activeModalAtom } from '@/store/atoms';
 import { useFolderManager } from './useFolderManager';
 import { useLicenseStore } from '@/store';
 
@@ -18,6 +17,7 @@ export function useSettings() {
   const [lockTimeoutError, setLockTimeoutError] = useState<string | null>(null);
   const { licenseStatus, isPro } = useLicenseStore();
   const setLicenseStatus = useSetAtom(licenseStatusAtom);
+  const refreshLicense = useSetAtom(refreshLicenseAtom);
   const setActiveModal = useSetAtom(activeModalAtom);
 
   const changeMasterPassword = useSetAtom(changeMasterPasswordAtom);
@@ -27,25 +27,14 @@ export function useSettings() {
   const folderManager = useFolderManager();
 
   useEffect(() => {
-    // get_license_status first for fast initial render, then chain validate → refresh
-    // so the final get_license_status always runs after validate stores any new counts.
-    invoke<LicenseStatus>('get_license_status')
-      .then((status) => setLicenseStatus(status))
-      .catch(() => setLicenseStatus(null))
-      .finally(() => {
-        invoke<boolean>('validate_license')
-          .catch(() => {})
-          .then(() => invoke<LicenseStatus>('get_license_status'))
-          .then((status) => setLicenseStatus(status ?? null))
-          .catch(() => {});
-      });
+    refreshLicense();
 
     invoke<number | null>('get_lock_timeout')
       .then((val) => setLockTimeout(val))
       .catch(() => {
         console.warn('get_lock_timeout: failed to load, keeping default');
       });
-  }, [setLicenseStatus]);
+  }, [refreshLicense]);
 
   const handleSetLockTimeout = (minutes: number | null) => {
     return invoke('set_lock_timeout', { minutes })

@@ -10,6 +10,18 @@ mod settings;
 pub mod favicon;
 pub mod models;
 
+// Single canonical import path for the license timing constants: everything in
+// the crate reaches them through `crate::database::…`, never
+// `crate::database::license::…`.
+// `database` is a private module, so rustc flags re-exports that no *non-test*
+// code happens to consume yet (GRACE and the skew tolerance are read by tests and
+// by `license.rs` itself). Keeping all four here is the point: the façade is the
+// one path, and a future caller must not have to reopen `license`.
+#[allow(unused_imports)]
+pub use license::{
+    is_timestamp_within, LICENSE_CLOCK_SKEW_TOLERANCE_SECS, LICENSE_GRACE_SECS,
+    LICENSE_REVALIDATE_SECS,
+};
 pub use models::*;
 
 pub const DB_FILENAME: &str = "passwords.db";

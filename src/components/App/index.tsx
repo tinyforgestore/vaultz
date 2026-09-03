@@ -7,6 +7,7 @@ import GeneratedPasswordsPage from '@/pages/GeneratedPasswordsPage';
 import { useSessionActivity } from '@/hooks/useSessionActivity';
 import { useGlobalKeyboard } from '@/hooks/useGlobalKeyboard';
 import { useOpenCreateEntryPrefilled } from '@/hooks/useOpenCreateEntryPrefilled';
+import { useLicenseRefreshOnFocus } from '@/hooks/useLicenseRefreshOnFocus';
 import GlobalModals from '@/components/GlobalModals';
 
 function SessionWrapper() {
@@ -16,6 +17,10 @@ function SessionWrapper() {
   useGlobalKeyboard();
   // Listen for overlay → main window deep-link to pre-fill the create-entry modal
   useOpenCreateEntryPrefilled();
+  // Revalidate the Pro license when the window regains focus, so a long-lived
+  // session cannot silently outlive the offline grace window. Mounted here (once)
+  // rather than per page, or it would fire several times per focus.
+  useLicenseRefreshOnFocus();
 
   return (
     <>

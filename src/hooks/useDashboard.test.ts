@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { act } from '@testing-library/react';
+import { createStore } from 'jotai';
 
 vi.mock('@tauri-apps/api/core');
 vi.mock('@tauri-apps/plugin-clipboard-manager');
@@ -213,7 +214,35 @@ describe('useDashboard', () => {
   });
 
   describe('license status', () => {
-    it('sets licenseStatus to null when get_license_status rejects', async () => {
+    it('runs the refreshLicenseAtom chain exactly once (status → validate → status)', async () => {
+      const calls: string[] = [];
+      mockInvoke.mockImplementation((cmd: unknown) => {
+        calls.push(cmd as string);
+        if (cmd === 'get_folders') return Promise.resolve([]);
+        if (cmd === 'get_passwords') return Promise.resolve([]);
+        if (cmd === 'check_limit_status') return Promise.resolve({ passwords_at_limit: false, folders_at_limit: false });
+        if (cmd === 'get_license_status') return Promise.resolve({ is_active: true });
+        if (cmd === 'validate_license') return Promise.resolve(true);
+        return Promise.resolve(undefined);
+      });
+      const { store } = renderHookWithProviders(() => useDashboard());
+      // Two macrotask flushes so any *later-tick* extra refresh would also land
+      // before the assertion.
+      await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
+      await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
+      // Exact sequence, not just containment: the refresh rides along with
+      // loadInitialDataAtom, so a second dedicated effect would show up here as a
+      // duplicated chain.
+      const licenseCalls = calls.filter(
+        (c) => c === 'get_license_status' || c === 'validate_license'
+      );
+      expect(licenseCalls).toEqual(['get_license_status', 'validate_license', 'get_license_status']);
+      expect(store.get(licenseStatusAtom)).toEqual({ is_active: true });
+    });
+
+    it('keeps a known-good licenseStatus when get_license_status rejects', async () => {
+      // Pre-seeded, or the assertion would be vacuous: the atom's default IS null.
+      // An offline unlock must not downgrade a license we already know is active.
       mockInvoke.mockImplementation((cmd: unknown) => {
         if (cmd === 'get_folders') return Promise.resolve([]);
         if (cmd === 'get_passwords') return Promise.resolve([]);
@@ -221,9 +250,15 @@ describe('useDashboard', () => {
         if (cmd === 'get_license_status') return Promise.reject(new Error('network error'));
         return Promise.resolve(undefined);
       });
-      const { store } = renderHookWithProviders(() => useDashboard());
+      const store = createStore();
+      store.set(licenseStatusAtom, { is_active: true, activation_usage: 1, activation_limit: 3 });
+      renderHookWithProviders(() => useDashboard(), { store });
       await act(async () => {});
-      expect(store.get(licenseStatusAtom)).toBeNull();
+      expect(store.get(licenseStatusAtom)).toEqual({
+        is_active: true,
+        activation_usage: 1,
+        activation_limit: 3,
+      });
     });
   });
 });

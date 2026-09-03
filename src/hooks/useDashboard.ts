@@ -5,7 +5,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSetAtom } from 'jotai';
-import { invoke } from '@tauri-apps/api/core';
 import {
   selectedFolderAtom,
   searchQueryAtom,
@@ -13,7 +12,6 @@ import {
   toggleFavoriteAtom,
   favoriteAlertAtom,
   loadInitialDataAtom,
-  licenseStatusAtom,
   activeModalAtom,
   pendingLicenseKeyAtom,
   deletePasswordAtom,
@@ -21,7 +19,6 @@ import {
 } from '@/store/atoms';
 import { isSpecialFolder, LIMIT_REACHED_PASSWORDS, LIMIT_REACHED_FOLDERS, SPECIAL_FOLDERS } from '@/constants/folders';
 import { CreatePasswordInput, CreateFolderInput, Password } from '@/types';
-import { LicenseStatus } from '@/types/license';
 import { useClipboard } from './useClipboard';
 import { usePasswordSelection } from './usePasswordSelection';
 import { useCreateFolder } from './useCreateFolder';
@@ -38,7 +35,6 @@ export function useDashboard() {
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [passwordToDelete, setPasswordToDelete] = useState<Password | null>(null);
   const searchInputRef = useRef<HTMLInputElement | HTMLElement | null>(null);
-  const setLicenseStatus = useSetAtom(licenseStatusAtom);
   const setActiveModal = useSetAtom(activeModalAtom);
   const setPendingLicenseKey = useSetAtom(pendingLicenseKeyAtom);
 
@@ -64,6 +60,8 @@ export function useDashboard() {
   const clipboard = useClipboard();
   const selection = usePasswordSelection(passwords);
 
+  // loadData() also refreshes the license status (see loadInitialDataAtom) — do
+  // not add a dedicated refreshLicense effect here, it would double-refresh.
   useEffect(() => { loadData(); }, [loadData]);
 
   // Handle inbound prefill from overlay → main window deep-link.
@@ -85,12 +83,6 @@ export function useDashboard() {
   useEffect(() => {
     setSelectedIndex(-1);
   }, [selectedFolder, searchQuery]);
-
-  useEffect(() => {
-    invoke<LicenseStatus>('get_license_status')
-      .then((status) => setLicenseStatus(status))
-      .catch(() => setLicenseStatus(null));
-  }, [setLicenseStatus]);
 
   const handlePasswordClick = (passwordId: string) => navigate(`/password/${passwordId}`);
   const handleSettingsClick = () => navigate('/settings');
